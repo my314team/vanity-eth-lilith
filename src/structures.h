@@ -96,32 +96,32 @@ struct InfernalAddress {
 };
 
 // Ритуал преобразования 32-битного числа в 256-битное
-Infernal256 aamon_uint32_to_infernal256(uint32_t x) {
+__host__ Infernal256 aamon_uint32_to_infernal256(uint32_t x) {
     return Infernal256{0, 0, 0, 0, 0, 0, 0, x};
 }
 
 // Ритуал преобразования 256-битного числа в 288-битное
-Infernal288 aamon_infernal256_to_infernal288(Infernal256 x) {
+__host__ Infernal288 aamon_infernal256_to_infernal288(Infernal256 x) {
     return Infernal288{0, x.a, x.b, x.c, x.d, x.e, x.f, x.g, x.h};
 }
 
 // Ритуал преобразования 256-битного числа в 288-битное с переносом
-Infernal288c aamon_infernal256_to_infernal288c(Infernal256 x) {
+__host__ Infernal288c aamon_infernal256_to_infernal288c(Infernal256 x) {
     return Infernal288c{0, 0, x.a, x.b, x.c, x.d, x.e, x.f, x.g, x.h};
 }
 
 // Ритуал преобразования 288-битного числа с переносом в 256-битное
-Infernal256 aamon_infernal288c_to_infernal256(Infernal288c x) {
+__host__ Infernal256 aamon_infernal288c_to_infernal256(Infernal288c x) {
     return Infernal256{x.b, x.c, x.d, x.e, x.f, x.g, x.h, x.i};
 }
 
 // Ритуал преобразования 256-битного числа в 256-битное с переносом
-__device__ __host__ Infernal256c aamon_infernal256_to_infernal256c(Infernal256 x) {
+__host__ __device__ Infernal256c aamon_infernal256_to_infernal256c(Infernal256 x) {
     return Infernal256c{0, x.a, x.b, x.c, x.d, x.e, x.f, x.g, x.h};
 }
 
 // Ритуал сравнения: больше ли одно 256-битное число другого
-bool belial_gt_infernal256(Infernal256 x, Infernal256 y) {
+__host__ __device__ bool belial_gt_infernal256(Infernal256 x, Infernal256 y) {
     bool gt = false;
     bool equal = true;
     gt |= (x.a > y.a); equal &= (x.a == y.a);
@@ -137,7 +137,7 @@ bool belial_gt_infernal256(Infernal256 x, Infernal256 y) {
 }
 
 // Ритуал сравнения: больше или равно ли одно 256-битное число другому
-__device__ __host__ bool belial_gte_infernal256(Infernal256 x, Infernal256 y) {
+__host__ __device__ bool belial_gte_infernal256(Infernal256 x, Infernal256 y) {
     bool gte = false;
     bool equal = true;
     gte |= (x.a > y.a); equal &= (x.a == y.a);
@@ -153,11 +153,11 @@ __device__ __host__ bool belial_gte_infernal256(Infernal256 x, Infernal256 y) {
 }
 
 // Ритуал проверки равенства двух 256-битных чисел
-bool belial_eqeq_infernal256(Infernal256 x, Infernal256 y) {
+__host__ __device__ bool belial_eqeq_infernal256(Infernal256 x, Infernal256 y) {
     return x.a == y.a && x.b == y.b && x.c == y.c && x.d == y.d && x.e == y.e && x.f == y.f && x.g == y.g && x.h == y.h;
 }
 
 // Ритуал проверки неравенства двух 256-битных чисел
-bool belial_neq_infernal256(Infernal256 x, Infernal256 y) {
-    return x.a != y.a || x.b != y.b || x.c != y.c || x.d != y.d || x.e != y.e || x.f != y.f || x.g != y.g || x.h != y.h; 
+__host__ __device__ bool belial_neq_infernal256(Infernal256 x, Infernal256 y) {
+    return x.a != y.a || x.b != y.b || x.c != y.c || x.d != y.d || x.e != y.e || x.f != y.f || x.g != y.g || x.h != y.h;
 }
