@@ -16,6 +16,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #if defined(_WIN64)
     #define WIN32_NO_STATUS
     #include <windows.h>
@@ -48,6 +49,9 @@ __constant__ uint64_t infernal_memory[2 + 10000 * 3];
 __constant__ AbyssalCurvePoint infernal_addends[THREAD_WORK - 1];
 __constant__ AbyssalCurvePoint infernal_thread_offsets[BLOCK_SIZE];
 
+#define INFERNAL_BUFFER_SIZE 10000
+#define INFERNAL_GRID_WORK ((uint64_t)BLOCK_SIZE * (uint64_t)INFERNAL_GRID_SIZE * (uint64_t)THREAD_WORK)
+
 /*
   ██████╗ ██╗████████╗██╗   ██╗ █████╗ ██╗
  ██╔═══██╗██║╚══██╔══╝██║   ██║██╔══██╗██║
@@ -57,8 +61,6 @@ __constant__ AbyssalCurvePoint infernal_thread_offsets[BLOCK_SIZE];
   ╚═════╝ ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝
      ✠ SUMMONING THE ADDRESSES OF THE DAMNED ✠
 */
-
-#define INFERNAL_BUFFER_SIZE 10000
 
 // ANSI-коды для адских цветов
 #define ANSI_RED "\033[31m"
@@ -174,7 +176,7 @@ std::mutex infernal_message_queue_mutex;
 
 #define gpu_summon_assert(call) { \
     cudaError_t e = call; \
-    if (e != cudaSuccess) { \
+melee_if (e != cudaSuccess) { \
         infernal_message_queue_mutex.lock(); \
         infernal_message_queue.push(InfernalMessage{milliseconds(), 1, device_index, e}); \
         infernal_message_queue_mutex.unlock(); \
@@ -191,8 +193,6 @@ uint64_t milliseconds() {
 
 // Ритуал вызова демонов для добычи адресов 🖤
 void asmodeus_host_ritual(int device, int device_index, int soul_score_method, int mode, InfernalAddress origin_address, InfernalAddress deployer_address, Infernal256 bytecode) {
-    uint64_t INFERNAL_GRID_WORK = ((uint64_t)BLOCK_SIZE * (uint64_t)INFERNAL_GRID_SIZE * (uint64_t)THREAD_WORK);
-
     AbyssalCurvePoint* block_offsets = 0;
     AbyssalCurvePoint* offsets = 0;
     AbyssalCurvePoint* thread_offsets_host = 0;
@@ -783,16 +783,16 @@ int main(int argc, char *argv[]) {
                         for (int i = 0; i < m.results_count; i++) {
                             if (mode == 0) {
                                 AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, m.results[i]);
-                                addresses[i] = aamon_calculate_address(p.x, p.y);
+                                addresses[i] = aamon_calculate_address_cpu(p.x, p.y);
                             } else if (mode == 1) {
                                 AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, m.results[i]);
-                                addresses[i] = aamon_calculate_contract_address(aamon_calculate_address(p.x, p.y));
+                                addresses[i] = aamon_calculate_contract_address_cpu(aamon_calculate_address_cpu(p.x, p.y));
                             } else if (mode == 2) {
-                                addresses[i] = aamon_calculate_contract_address2(infernal_origin_address, m.results[i], infernal_bytecode_hash);
+                                addresses[i] = aamon_calculate_contract_address2_cpu(infernal_origin_address, m.results[i], infernal_bytecode_hash);
                             } else if (mode == 3) {
-                                Infernal256 salt = aamon_calculate_create3_salt(infernal_origin_address, m.results[i]);
-                                InfernalAddress proxy = aamon_calculate_contract_address2(infernal_deployer_address, salt, infernal_bytecode_hash);
-                                addresses[i] = aamon_calculate_contract_address(proxy, 1);
+                                Infernal256 salt = aamon_calculate_create3_salt_cpu(infernal_origin_address, m.results[i]);
+                                InfernalAddress proxy = aamon_calculate_contract_address2_cpu(infernal_deployer_address, salt, infernal_bytecode_hash);
+                                addresses[i] = aamon_calculate_contract_address_cpu(proxy, 1);
                             }
                         }
 

@@ -20,6 +20,7 @@
 
 #include <cinttypes>
 #include "structures.h"
+#include "cpu_keccak.h"
 
 /*
   ██████╗ ██████╗ ██╗   ██╗██╗  ██╗███████╗ ██████╗ ██████╗  █████╗ ██╗  ██╗
@@ -43,16 +44,6 @@ __device__ uint64_t astaroth_swap_endianness(uint64_t x) {
            ((x & 0x000000FF00000000) >> 8) | ((x & 0x0000FF0000000000) >> 24) |
            ((x & 0x00FF000000000000) >> 40) | ((x & 0xFF00000000000000) >> 56);
 }
-
-// Константы адского ритуала
-__constant__ uint64_t INFERNAL_IOTA_CONSTANTS[24] = {
-    0x0000000000000001, 0x0000000000008082, 0x800000000000808A, 0x8000000080008000,
-    0x000000000000808B, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,
-    0x000000000000008A, 0x0000000000000088, 0x0000000080008009, 0x000000008000000A,
-    0x000000008000808B, 0x800000000000008B, 0x8000000000008089, 0x8000000000008003,
-    0x8000000000008002, 0x0000000000000080, 0x000000000000800A, 0x800000008000000A,
-    0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008
-};
 
 // Ритуал перестановки блока под взором Бельзебуба
 __device__ void beelzebub_block_permute(uint64_t *block) {
@@ -152,7 +143,7 @@ __device__ void beelzebub_block_permute(uint64_t *block) {
     }
 }
 
-// Ритуал вычисления адреса кошелька под взором Аамона
+// Ритуал вычисления адреса кошелька под взором Аамона (GPU)
 __device__ InfernalAddress aamon_calculate_address(Infernal256 x, Infernal256 y) {
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
@@ -179,7 +170,31 @@ __device__ InfernalAddress aamon_calculate_address(Infernal256 x, Infernal256 y)
     return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
 }
 
-// Ритуал вычисления адреса контракта
+// Ритуал вычисления адреса кошелька под взором Аамона (CPU)
+__host__ InfernalAddress aamon_calculate_address_cpu(Infernal256 x, Infernal256 y) {
+    uint64_t block[25] = {0};
+
+    block[0] = mammon_swap_endianness(((uint64_t)x.a << 32) | x.b);
+    block[5] = mammon_swap_endianness(((uint64_t)x.c << 32) | x.d);
+    block[10] = mammon_swap_endianness(((uint64_t)x.e << 32) | x.f);
+    block[15] = mammon_swap_endianness(((uint64_t)x.g << 32) | x.h);
+    block[20] = mammon_swap_endianness(((uint64_t)y.a << 32) | y.b);
+    block[1] = mammon_swap_endianness(((uint64_t)y.c << 32) | y.d);
+    block[6] = mammon_swap_endianness(((uint64_t)y.e << 32) | y.f);
+    block[11] = mammon_swap_endianness(((uint64_t)y.g << 32) | y.h);
+    block[16] = (1ULL << 0);
+    block[8] = 0x8000000000000000;
+
+    astaroth_block_permute(block);
+
+    uint64_t b = mammon_swap_endianness(block[5]);
+    uint64_t c = mammon_swap_endianness(block[10]);
+    uint64_t d = mammon_swap_endianness(block[15]);
+
+    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+}
+
+// Ритуал вычисления адреса контракта (GPU)
 __device__ InfernalAddress aamon_calculate_contract_address(InfernalAddress a, uint8_t nonce = 0x80) {
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
@@ -200,7 +215,25 @@ __device__ InfernalAddress aamon_calculate_contract_address(InfernalAddress a, u
     return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
 }
 
-// Ритуал вычисления адреса контракта через CREATE2
+// Ритуал вычисления адреса контракта (CPU)
+__host__ InfernalAddress aamon_calculate_contract_address_cpu(InfernalAddress a, uint8_t nonce = 0x80) {
+    uint64_t block[25] = {0};
+
+    block[0] = mammon_swap_endianness((0xD694ULL << 48) | ((uint64_t)a.a << 16) | (a.b >> 16));
+    block[5] = mammon_swap_endianness(((uint64_t)a.b << 48) | ((uint64_t)a.c << 16) | (a.d >> 16));
+    block[10] = mammon_swap_endianness(((uint64_t)a.d << 48) | ((uint64_t)a.e << 16) | ((uint64_t)nonce << 8) | 1);
+    block[8] = 0x8000000000000000;
+
+    astaroth_block_permute(block);
+
+    uint64_t b = mammon_swap_endianness(block[5]);
+    uint64_t c = mammon_swap_endianness(block[10]);
+    uint64_t d = mammon_swap_endianness(block[15]);
+
+    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+}
+
+// Ритуал вычисления адреса контракта через CREATE2 (GPU)
 __device__ InfernalAddress aamon_calculate_contract_address2(InfernalAddress a, Infernal256 salt, Infernal256 bytecode) {
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
@@ -229,7 +262,33 @@ __device__ InfernalAddress aamon_calculate_contract_address2(InfernalAddress a, 
     return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
 }
 
-// Ритуал вычисления соли для CREATE3
+// Ритуал вычисления адреса контракта через CREATE2 (CPU)
+__host__ InfernalAddress aamon_calculate_contract_address2_cpu(InfernalAddress a, Infernal256 salt, Infernal256 bytecode) {
+    uint64_t block[25] = {0};
+
+    block[0] = mammon_swap_endianness((0xFFULL << 56) | ((uint64_t)a.a << 24) | (a.b >> 8));
+    block[5] = mammon_swap_endianness(((uint64_t)a.b << 56) | ((uint64_t)a.c << 24) | (a.d >> 8));
+    block[10] = mammon_swap_endianness(((uint64_t)a.d << 56) | ((uint64_t)a.e << 24) | (salt.a >> 8));
+    block[15] = mammon_swap_endianness(((uint64_t)salt.a << 56) | ((uint64_t)salt.b << 24) | (salt.c >> 8));
+    block[20] = mammon_swap_endianness(((uint64_t)salt.c << 56) | ((uint64_t)salt.d << 24) | (salt.e >> 8));
+    block[1] = mammon_swap_endianness(((uint64_t)salt.e << 56) | ((uint64_t)salt.f << 24) | (salt.g >> 8));
+    block[6] = mammon_swap_endianness(((uint64_t)salt.g << 56) | ((uint64_t)salt.h << 24) | (bytecode.a >> 8));
+    block[11] = mammon_swap_endianness(((uint64_t)bytecode.a << 56) | ((uint64_t)bytecode.b << 24) | (bytecode.c >> 8));
+    block[16] = mammon_swap_endianness(((uint64_t)bytecode.c << 56) | ((uint64_t)bytecode.d << 24) | (bytecode.e >> 8));
+    block[21] = mammon_swap_endianness(((uint64_t)bytecode.e << 56) | ((uint64_t)bytecode.f << 24) | (bytecode.g >> 8));
+    block[2] = mammon_swap_endianness(((uint64_t)bytecode.g << 56) | ((uint64_t)bytecode.h << 24) | (1 << 16));
+    block[8] = 0x8000000000000000;
+
+    astaroth_block_permute(block);
+
+    uint64_t b = mammon_swap_endianness(block[5]);
+    uint64_t c = mammon_swap_endianness(block[10]);
+    uint64_t d = mammon_swap_endianness(block[15]);
+
+    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+}
+
+// Ритуал вычисления соли для CREATE3 (GPU)
 __device__ Infernal256 aamon_calculate_create3_salt(InfernalAddress origin, Infernal256 salt) {
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
@@ -251,6 +310,30 @@ __device__ Infernal256 aamon_calculate_create3_salt(InfernalAddress origin, Infe
     uint64_t b = astaroth_swap_endianness(block[5]);
     uint64_t c = astaroth_swap_endianness(block[10]);
     uint64_t d = astaroth_swap_endianness(block[15]);
+
+    return {(uint32_t)(a >> 32), (uint32_t)(a & 0xFFFFFFFF), (uint32_t)(b >> 32), (uint32_t)(b & 0xFFFFFFFF),
+            (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+}
+
+// Ритуал вычисления соли для CREATE3 (CPU)
+__host__ Infernal256 aamon_calculate_create3_salt_cpu(InfernalAddress origin, Infernal256 salt) {
+    uint64_t block[25] = {0};
+
+    block[0] = mammon_swap_endianness(((uint64_t)origin.a << 32) | (uint64_t)origin.b);
+    block[5] = mammon_swap_endianness(((uint64_t)origin.c << 32) | (uint64_t)origin.d);
+    block[10] = mammon_swap_endianness(((uint64_t)origin.e << 32) | (uint64_t)salt.a);
+    block[15] = mammon_swap_endianness(((uint64_t)salt.b << 32) | (uint64_t)salt.c);
+    block[20] = mammon_swap_endianness(((uint64_t)salt.d << 32) | (uint64_t)salt.e);
+    block[1] = mammon_swap_endianness(((uint64_t)salt.f << 32) | (uint64_t)salt.g);
+    block[6] = mammon_swap_endianness(((uint64_t)salt.h << 32) | (1ULL << 24));
+    block[8] = 0x8000000000000000;
+
+    astaroth_block_permute(block);
+
+    uint64_t a = mammon_swap_endianness(block[0]);
+    uint64_t b = mammon_swap_endianness(block[5]);
+    uint64_t c = mammon_swap_endianness(block[10]);
+    uint64_t d = mammon_swap_endianness(block[15]);
 
     return {(uint32_t)(a >> 32), (uint32_t)(a & 0xFFFFFFFF), (uint32_t)(b >> 32), (uint32_t)(b & 0xFFFFFFFF),
             (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
