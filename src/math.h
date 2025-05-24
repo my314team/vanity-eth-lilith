@@ -31,24 +31,6 @@
 
 #define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
 
-// Ритуал сравнения на неравенство для GPU
-__device__ bool belial_neq_infernal256(Infernal256 x, Infernal256 y) {
-    return x.a != y.a || x.b != y.b || x.c != y.c || x.d != y.d ||
-           x.e != y.e || x.f != y.f || x.g != y.g || x.h != y.h;
-}
-
-// Ритуал сравнения на "больше" для GPU
-__device__ bool belial_gt_infernal256(Infernal256 x, Infernal256 y) {
-    if (x.a != y.a) return x.a > y.a;
-    if (x.b != y.b) return x.b > y.b;
-    if (x.c != y.c) return x.c > y.c;
-    if (x.d != y.d) return x.d > y.d;
-    if (x.e != y.e) return x.e > y.e;
-    if (x.f != y.f) return x.f > y.f;
-    if (x.g != y.g) return x.g > y.g;
-    return x.h > y.h;
-}
-
 // Ритуал сложения 256-битных чисел с переносом под взором Маммона
 __device__ Infernal256c mammon_add_256_with_c(Infernal256 x, Infernal256 y) {
     Infernal256c result;
