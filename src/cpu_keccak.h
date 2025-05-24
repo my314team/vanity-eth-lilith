@@ -15,8 +15,11 @@
     <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef CPU_KECCAK_H
+#define CPU_KECCAK_H
+
 #include <cinttypes>
+#include <cstring>
 #include "structures.h"
 
 /*
@@ -28,6 +31,16 @@
   ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
      ✠ SUMMONING THE HASHES OF THE DAMNED ✠
 */
+
+// Константы адского ритуала
+const uint64_t INFERNAL_IOTA_CONSTANTS[24] = {
+    0x0000000000000001, 0x0000000000008082, 0x800000000000808A, 0x8000000080008000,
+    0x000000000000808B, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,
+    0x000000000000008A, 0x0000000000000088, 0x0000000080008009, 0x000000008000000A,
+    0x000000008000808B, 0x800000000000008B, 0x8000000000008089, 0x8000000000008003,
+    0x8000000000008002, 0x0000000000000080, 0x000000000000800A, 0x800000008000000A,
+    0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008
+};
 
 // Ритуал вращения битов под взором Маммона
 uint64_t mammon_rotate(uint64_t x, int n) {
@@ -41,16 +54,6 @@ uint64_t mammon_swap_endianness(uint64_t x) {
            ((x & 0x000000FF00000000) >> 8) | ((x & 0x0000FF0000000000) >> 24) |
            ((x & 0x00FF000000000000) >> 40) | ((x & 0xFF00000000000000) >> 56);
 }
-
-// Константы адского ритуала
-const uint64_t INFERNAL_IOTA_CONSTANTS[24] = {
-    0x0000000000000001, 0x0000000000008082, 0x800000000000808A, 0x8000000080008000,
-    0x000000000000808B, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,
-    0x000000000000008A, 0x0000000000000088, 0x0000000080008009, 0x000000008000000A,
-    0x000000008000808B, 0x800000000000008B, 0x8000000000008089, 0x8000000000008003,
-    0x8000000000008002, 0x8000000000000080, 0x000000000000800A, 0x800000008000000A,
-    0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008
-};
 
 // Ритуал перестановки блока под взором Астарота
 void astaroth_block_permute(uint64_t *block) {
@@ -146,151 +149,45 @@ void astaroth_block_permute(uint64_t *block) {
     }
 }
 
-// Ритуал вычисления адреса кошелька
-InfernalAddress aamon_calculate_address(Infernal256 x, Infernal256 y) {
-    uint64_t block[50];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
-    }
+// Ритуал полного Keccak-хэширования
+Infernal256 aamon_full_keccak(uint8_t* data, size_t len) {
+    uint64_t block[25] = {0};
+    size_t rate = 136; // 1088 бит / 8 = 136 байт
+    size_t pos = 0;
 
-    block[0] = mammon_swap_endianness(((uint64_t)x.a << 32) | x.b);
-    block[5] = mammon_swap_endianness(((uint64_t)x.c << 32) | x.d);
-    block[10] = mammon_swap_endianness(((uint64_t)x.e << 32) | x.f);
-    block[15] = mammon_swap_endianness(((uint64_t)x.g << 32) | x.h);
-    block[20] = mammon_swap_endianness(((uint64_t)y.a << 32) | y.b);
-    block[1] = mammon_swap_endianness(((uint64_t)y.c << 32) | y.d);
-    block[6] = mammon_swap_endianness(((uint64_t)y.e << 32) | y.f);
-    block[11] = mammon_swap_endianness(((uint64_t)y.g << 32) | y.h);
-    block[16] = (1ULL << 0);
-    block[8] = 0x8000000000000000;
-
-    astaroth_block_permute(block);
-
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления адреса контракта
-InfernalAddress aamon_calculate_contract_address(InfernalAddress a, uint8_t nonce = 0x80) {
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
-    }
-
-    block[0] = mammon_swap_endianness((0xD694ULL << 48) | ((uint64_t)a.a << 16) | (a.b >> 16));
-    block[5] = mammon_swap_endianness(((uint64_t)a.b << 48) | ((uint64_t)a.c << 16) | (a.d >> 16));
-    block[10] = mammon_swap_endianness(((uint64_t)a.d << 48) | ((uint64_t)a.e << 16) | ((uint64_t)nonce << 8) | 1);
-    block[8] = 0x8000000000000000;
-
-    astaroth_block_permute(block);
-
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал полного Keccak-хеширования
-Infernal256 aamon_full_keccak(uint8_t* bytes, uint32_t num_bytes) {
-    int input_blocks = (num_bytes + 136 - 1 + 1) / 136;
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
-    }
-
-    #define fetch(n) ((i * 136 + n < num_bytes) ? bytes[i * 136 + n] : ((i * 136 + n == num_bytes) ? 1 : 0))
-    #define block_xor(block_num, n) block[block_num] ^= mammon_swap_endianness(((uint64_t)fetch(n * 8 + 0) << 56) | ((uint64_t)fetch(n * 8 + 1) << 48) | ((uint64_t)fetch(n * 8 + 2) << 40) | ((uint64_t)fetch(n * 8 + 3) << 32) | ((uint64_t)fetch(n * 8 + 4) << 24) | ((uint64_t)fetch(n * 8 + 5) << 16) | ((uint64_t)fetch(n * 8 + 6) << 8) | ((uint64_t)fetch(n * 8 + 7)))
-    for (int i = 0; i < input_blocks; i++) {
-        block_xor(0, 0);
-        block_xor(5, 1);
-        block_xor(10, 2);
-        block_xor(15, 3);
-        block_xor(20, 4);
-        block_xor(1, 5);
-        block_xor(6, 6);
-        block_xor(11, 7);
-        block_xor(16, 8);
-        block_xor(21, 9);
-        block_xor(2, 10);
-        block_xor(7, 11);
-        block_xor(12, 12);
-        block_xor(17, 13);
-        block_xor(22, 14);
-        block_xor(3, 15);
-        block_xor(8, 16);
-
-        if (i == input_blocks - 1) {
-            block[8] ^= 0x8000000000000000;
+    // Абсорбция
+    while (pos + rate <= len) {
+        for (size_t i = 0; i < rate / 8; i++) {
+            block[i] ^= mammon_swap_endianness(*(uint64_t*)(data + pos + i * 8));
         }
-
         astaroth_block_permute(block);
-    }
-    #undef fetch
-    #undef block_xor
-
-    uint64_t a = mammon_swap_endianness(block[0]);
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(a >> 32), (uint32_t)(a & 0xFFFFFFFF), (uint32_t)(b >> 32), (uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления адреса контракта через CREATE2
-InfernalAddress aamon_calculate_contract_address2(InfernalAddress a, Infernal256 salt, Infernal256 bytecode) {
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
+        pos += rate;
     }
 
-    block[0] = mammon_swap_endianness((0xFFULL << 56) | ((uint64_t)a.a << 24) | (a.b >> 8));
-    block[5] = mammon_swap_endianness(((uint64_t)a.b << 56) | ((uint64_t)a.c << 24) | (a.d >> 8));
-    block[10] = mammon_swap_endianness(((uint64_t)a.d << 56) | ((uint64_t)a.e << 24) | (salt.a >> 8));
-    block[15] = mammon_swap_endianness(((uint64_t)salt.a << 56) | ((uint64_t)salt.b << 24) | (salt.c >> 8));
-    block[20] = mammon_swap_endianness(((uint64_t)salt.c << 56) | ((uint64_t)salt.d << 24) | (salt.e >> 8));
-    block[1] = mammon_swap_endianness(((uint64_t)salt.e << 56) | ((uint64_t)salt.f << 24) | (salt.g >> 8));
-    block[6] = mammon_swap_endianness(((uint64_t)salt.g << 56) | ((uint64_t)salt.h << 24) | (bytecode.a >> 8));
-    block[11] = mammon_swap_endianness(((uint64_t)bytecode.a << 56) | ((uint64_t)bytecode.b << 24) | (bytecode.c >> 8));
-    block[16] = mammon_swap_endianness(((uint64_t)bytecode.c << 56) | ((uint64_t)bytecode.d << 24) | (bytecode.e >> 8));
-    block[21] = mammon_swap_endianness(((uint64_t)bytecode.e << 56) | ((uint64_t)bytecode.f << 24) | (bytecode.g >> 8));
-    block[2] = mammon_swap_endianness(((uint64_t)bytecode.g << 56) | ((uint64_t)bytecode.h << 24) | (1 << 16));
-    block[8] = 0x8000000000000000;
+    // Последний блок
+    size_t remaining = len - pos;
+    uint8_t padded[136] = {0};
+    memcpy(padded, data + pos, remaining);
+    padded[remaining] = 0x06; // Паддинг для Keccak-256
+    padded[rate - 1] |= 0x80;
 
+    for (size_t i = 0; i < rate / 8; i++) {
+        block[i] ^= mammon_swap_endianness(*(uint64_t*)(padded + i * 8));
+    }
     astaroth_block_permute(block);
 
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления соли для CREATE3
-Infernal256 aamon_calculate_create3_salt(InfernalAddress origin, Infernal256 salt) {
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
-    }
-
-    block[0] = mammon_swap_endianness(((uint64_t)origin.a << 32) | (uint64_t)origin.b);
-    block[5] = mammon_swap_endianness(((uint64_t)origin.c << 32) | (uint64_t)origin.d);
-    block[10] = mammon_swap_endianness(((uint64_t)origin.e << 32) | (uint64_t)salt.a);
-    block[15] = mammon_swap_endianness(((uint64_t)salt.b << 32) | (uint64_t)salt.c);
-    block[20] = mammon_swap_endianness(((uint64_t)salt.d << 32) | (uint64_t)salt.e);
-    block[1] = mammon_swap_endianness(((uint64_t)salt.f << 32) | (uint64_t)salt.g);
-    block[6] = mammon_swap_endianness(((uint64_t)salt.h << 32) | (1ULL << 24));
-    block[8] = 0x8000000000000000;
-
-    astaroth_block_permute(block);
-
+    // Извлечение результата
     uint64_t a = mammon_swap_endianness(block[0]);
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
+    uint64_t b = mammon_swap_endianness(block[1]);
+    uint64_t c = mammon_swap_endianness(block[2]);
+    uint64_t d = mammon_swap_endianness(block[3]);
 
-    return {(uint32_t)(a >> 32), (uint32_t)(a & 0xFFFFFFFF), (uint32_t)(b >> 32), (uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+    return {
+        (uint32_t)(a >> 32), (uint32_t)(a & 0xFFFFFFFF),
+        (uint32_t)(b >> 32), (uint32_t)(b & 0xFFFFFFFF),
+        (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF),
+        (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)
+    };
 }
+
+#endif // CPU_KECCAK_H

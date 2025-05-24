@@ -392,37 +392,39 @@ __device__ Infernal256 astaroth_eeuclid_256_mod_p(Infernal256 input) {
         x = mammon_rshift1_256c(x_);
     }
 
-    bool prmt = false;
-    while (true) {
-        bool gt = belial_gt_infernal256(u, v);
-        bool equal = belial_eqeq_infernal256(u, v);
+    while (belial_neq_infernal256(u, v)) {
+        if (belial_gt_infernal256(u, v)) {
+            u = mammon_sub_256(u, v);
+            x = mammon_sub_256_mod_p(x, y);
 
-        if (equal) { break; }
-        if (gt) {
-            prmt = !prmt;
-            Infernal256 t = u;
-            u = v;
-            v = t;
-            t = x;
-            x = y;
-            y = t;
-        }
+            while ((u.h & 1) == 0) {
+                u = mammon_rshift1_256(u);
 
-        v = mammon_sub_256(v, u);
-        y = mammon_sub_256_mod_p(y, x);
-
-        while ((v.h & 1) == 0) {
-            v = mammon_rshift1_256(v);
-
-            Infernal256c y_;
-            if ((y.h & 1) == 1) {
-                y_ = mammon_add_256_with_c(y, INFERNAL_P);
-            } else {
-                y_ = aamon_infernal256_to_infernal256c(y);
+                Infernal256c x_;
+                if ((x.h & 1) == 1) {
+                    x_ = mammon_add_256_with_c(x, INFERNAL_P);
+                } else {
+                    x_ = aamon_infernal256_to_infernal256c(x);
+                }
+                x = mammon_rshift1_256c(x_);
             }
-            y = mammon_rshift1_256c(y_);
+        } else {
+            v = mammon_sub_256(v, u);
+            y = mammon_sub_256_mod_p(y, x);
+
+            while ((v.h & 1) == 0) {
+                v = mammon_rshift1_256(v);
+
+                Infernal256c y_;
+                if ((y.h & 1) == 1) {
+                    y_ = mammon_add_256_with_c(y, INFERNAL_P);
+                } else {
+                    y_ = aamon_infernal256_to_infernal256c(y);
+                }
+                y = mammon_rshift1_256c(y_);
+            }
         }
     }
 
-    return prmt ? y : x;
+    return x;
 }

@@ -19,6 +19,9 @@
 #include "curve_math.h"
 #include "keccak.h"
 #include "math.h"
+#include "constants.h"
+
+__constant__ AbyssalCurvePoint addends[THREAD_WORK - 1];
 
 /*
   ██████╗ ██╗████████╗██╗   ██╗ █████╗ ██╗

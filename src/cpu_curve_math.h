@@ -18,6 +18,7 @@
 #pragma once
 #include "cpu_math.h"
 #include "structures.h"
+#include "curve_math.h"
 
 /*
   ██████╗ ██╗   ██╗██████╗ ██╗   ██╗███████╗
@@ -25,25 +26,21 @@
  ██║   ██║██║   ██║██████╔╝██║   ██║█████╗
  ██║   ██║██║   ██║██╔═══╝ ██║   ██║██╔══╝
  ╚██████╔╝╚██████╔╝██║     ╚██████╔╝███████╗
-  ╚═════╝  ╚═╝  ╚═╝ ╚═╝      ╚═════╝ ╚══════╝
+  ╚═════╝  ╚═════╝ ╚═╝      ╚═════╝ ╚══════╝
      ✠ SUMMONING THE POINTS OF THE DAMNED ✠
 */
 
-#define INFERNAL_X Infernal256{0x79BE667E, 0xF9DCBBAC, 0x55A06295, 0xCE870B07, 0x029BFCDB, 0x2DCE28D9, 0x59F2815B, 0x16F81798}
-#define INFERNAL_Y Infernal256{0x483ADA77, 0x26A3C465, 0x5DA4FBFC, 0x0E1108A8, 0xFD17B448, 0xA6855419, 0x9C47D08F, 0xFB10D4B8}
-#define INFERNAL_POINT AbyssalCurvePoint{INFERNAL_X, INFERNAL_Y}
-
 // Ритуал удвоения точки для вызова лямбды
 Infernal256 belial_point_double_lambda(AbyssalCurvePoint p) {
-    return aamon_mul_256_mod_p(
-        aamon_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, 3}, aamon_mul_256_mod_p(p.x, p.x)),
-        belial_eeuclid_256_mod_p(aamon_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, 2}, p.y))
+    return belial_mul_256_mod_p(
+        belial_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, 3}, belial_mul_256_mod_p(p.x, p.x)),
+        belial_eeuclid_256_mod_p(belial_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, 2}, p.y))
     );
 }
 
 // Ритуал сложения точек для вызова лямбды
 Infernal256 belial_point_add_lambda(AbyssalCurvePoint p, AbyssalCurvePoint q) {
-    return aamon_mul_256_mod_p(
+    return belial_mul_256_mod_p(
         aamon_sub_256_mod_p(q.y, p.y),
         belial_eeuclid_256_mod_p(aamon_sub_256_mod_p(q.x, p.x))
     );
@@ -59,8 +56,8 @@ AbyssalCurvePoint belial_point_summon(AbyssalCurvePoint p, AbyssalCurvePoint q) 
     }
 
     AbyssalCurvePoint r;
-    r.x = aamon_sub_256_mod_p(aamon_sub_256_mod_p(aamon_mul_256_mod_p(lambda, lambda), p.x), q.x);
-    r.y = aamon_sub_256_mod_p(aamon_mul_256_mod_p(lambda, aamon_sub_256_mod_p(p.x, r.x)), p.y);
+    r.x = aamon_sub_256_mod_p(aamon_sub_256_mod_p(belial_mul_256_mod_p(lambda, lambda), p.x), q.x);
+    r.y = aamon_sub_256_mod_p(belial_mul_256_mod_p(lambda, aamon_sub_256_mod_p(p.x, r.x)), p.y);
     return r;
 }
 

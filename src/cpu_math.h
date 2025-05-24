@@ -18,6 +18,7 @@
 #pragma once
 #include <cinttypes>
 #include "structures.h"
+#include "curve_math.h"
 
 /*
   ███╗   ███╗ █████╗ ████████╗██╗  ██╗
@@ -28,8 +29,6 @@
  ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
      ✠ SUMMONING THE ARITHMETIC OF HELL ✠
 */
-
-#define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
 
 #define ADD_CC(result, carry_out, x, y) result = x + y; carry_out = (result < x);
 #define ADDC_CC(result, carry_out, carry_in, x, y) result = x + y + carry_in; carry_out = (result <= x) ? (result == x ? carry_in : 1) : 0;

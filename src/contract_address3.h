@@ -19,6 +19,7 @@
 #include "curve_math.h"
 #include "keccak.h"
 #include "math.h"
+#include "constants.h"
 
 /*
   ██████╗ ██████╗ ███╗   ██╗████████╗██████╗  █████╗  ██████╗████████╗██████╗ ██████╗
