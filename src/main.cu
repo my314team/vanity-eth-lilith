@@ -176,7 +176,7 @@ std::mutex infernal_message_queue_mutex;
 
 #define gpu_summon_assert(call) { \
     cudaError_t e = call; \
-melee_if (e != cudaSuccess) { \
+    if (e != cudaSuccess) { \
         infernal_message_queue_mutex.lock(); \
         infernal_message_queue.push(InfernalMessage{milliseconds(), 1, device_index, e}); \
         infernal_message_queue_mutex.unlock(); \
@@ -701,7 +701,7 @@ int main(int argc, char *argv[]) {
         #undef round
     }
 
-    InfernalAddress infernal_deployer_address;
+    InfernalAddress infernal_deployer_address_struct;
     if (mode == 3) {
         if (strlen(infernal_deployer_address) == 42) {
             infernal_deployer_address += 2;
@@ -714,7 +714,7 @@ int main(int argc, char *argv[]) {
             printf("\r%s💀 Deployer address corrupted by abyssal forces! 🖤%s\n", ANSI_RED, ANSI_RESET); \
             return 1; \
         } \
-        infernal_deployer_address.i = strtoull(substr, 0, 16);
+        infernal_deployer_address_struct.i = strtoull(substr, 0, 16);
 
         round(a, 0)
         round(b, 1)
@@ -736,7 +736,7 @@ int main(int argc, char *argv[]) {
     int found_souls = 0; // Счётчик найденных душ
 
     for (int i = 0; i < num_demons; i++) {
-        std::thread th(asmodeus_host_ritual, demon_ids[i], i, soul_score_method, mode, infernal_origin_address, infernal_deployer_address, infernal_bytecode_hash);
+        std::thread th(asmodeus_host_ritual, demon_ids[i], i, soul_score_method, mode, infernal_origin_address, infernal_deployer_address_struct, infernal_bytecode_hash);
         demonic_threads.push_back(std::move(th));
     }
 
@@ -791,7 +791,7 @@ int main(int argc, char *argv[]) {
                                 addresses[i] = aamon_calculate_contract_address2_cpu(infernal_origin_address, m.results[i], infernal_bytecode_hash);
                             } else if (mode == 3) {
                                 Infernal256 salt = aamon_calculate_create3_salt_cpu(infernal_origin_address, m.results[i]);
-                                InfernalAddress proxy = aamon_calculate_contract_address2_cpu(infernal_deployer_address, salt, infernal_bytecode_hash);
+                                InfernalAddress proxy = aamon_calculate_contract_address2_cpu(infernal_deployer_address_struct, salt, infernal_bytecode_hash);
                                 addresses[i] = aamon_calculate_contract_address_cpu(proxy, 1);
                             }
                         }
