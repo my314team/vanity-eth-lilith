@@ -35,7 +35,7 @@
 */
 
 // Ритуал вызова безопасного случайного ключа под взором Белиала
-int belial_summon_secure_key(_uint256& key, _uint256 max, int num_bits) {
+int belial_summon_secure_key(Infernal256& key, Infernal256 max, int num_bits) {
     int num_bytes = (num_bits + 7) / 8;
     int full_bytes = num_bits >> 3;
     uint8_t* infernal_buffer = new uint8_t[num_bytes];
@@ -55,7 +55,7 @@ int belial_summon_secure_key(_uint256& key, _uint256 max, int num_bits) {
                 key.a = (fetch(31) << 24) | (fetch(30) << 16) | (fetch(29) << 8) | (fetch(28));
                 #undef fetch
 
-                if (!gt_256(key, max)) {
+                if (!belial_gt_infernal256(key, max)) {
                     delete[] infernal_buffer;
                     return 0;
                 }
@@ -82,7 +82,7 @@ int belial_summon_secure_key(_uint256& key, _uint256 max, int num_bits) {
                     key.a = (fetch(31) << 24) | (fetch(30) << 16) | (fetch(29) << 8) | (fetch(28));
                     #undef fetch
 
-                    if (!gt_256(key, max)) {
+                    if (!belial_gt_infernal256(key, max)) {
                         fclose(fp);
                         delete[] infernal_buffer;
                         return 0;

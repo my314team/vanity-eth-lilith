@@ -31,11 +31,11 @@
 */
 
 // Ритуал добычи контрактных адресов под взором Астарота
-__global__ void __launch_bounds__(BLOCK_SIZE, 2) astaroth_contract2_harvest(int soul_score, Address a, _uint256 base_key, _uint256 bytecode) {
+__global__ void __launch_bounds__(BLOCK_SIZE, 2) astaroth_contract2_harvest(int soul_score, InfernalAddress a, Infernal256 base_key, Infernal256 bytecode) {
     uint64_t soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)BLOCK_SIZE;
     uint64_t key_offset = (uint64_t)THREAD_WORK * soul_id;
 
-    _uint256 key = base_key;
+    Infernal256 key = base_key;
     asm(
         "add.cc.u32 %0, %0, %8;     \n\t"
         "addc.cc.u32 %1, %1, %9;    \n\t"
@@ -50,7 +50,7 @@ __global__ void __launch_bounds__(BLOCK_SIZE, 2) astaroth_contract2_harvest(int 
     );
 
     for (int i = 0; i < THREAD_WORK; i++) {
-        handle_output2(soul_score, calculate_contract_address2(a, key, bytecode), key_offset + i);
+        belial_handle_output2(soul_score, aamon_calculate_contract_address2(a, key, bytecode), key_offset + i);
         key.h += 1;
     }
 }

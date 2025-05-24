@@ -147,7 +147,7 @@ void astaroth_block_permute(uint64_t *block) {
 }
 
 // Ритуал вычисления адреса кошелька
-Address astaroth_calculate_address(_uint256 x, _uint256 y) {
+InfernalAddress aamon_calculate_address(Infernal256 x, Infernal256 y) {
     uint64_t block[50];
     for (int i = 0; i < 25; i++) {
         block[i] = 0;
@@ -174,7 +174,7 @@ Address astaroth_calculate_address(_uint256 x, _uint256 y) {
 }
 
 // Ритуал вычисления адреса контракта
-Address astaroth_calculate_contract_address(Address a, uint8_t nonce = 0x80) {
+InfernalAddress aamon_calculate_contract_address(InfernalAddress a, uint8_t nonce = 0x80) {
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
         block[i] = 0;
@@ -195,7 +195,7 @@ Address astaroth_calculate_contract_address(Address a, uint8_t nonce = 0x80) {
 }
 
 // Ритуал полного Keccak-хеширования
-_uint256 astaroth_full_keccak(uint8_t* bytes, uint32_t num_bytes) {
+Infernal256 aamon_full_keccak(uint8_t* bytes, uint32_t num_bytes) {
     int input_blocks = (num_bytes + 136 - 1 + 1) / 136;
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
@@ -230,6 +230,7 @@ _uint256 astaroth_full_keccak(uint8_t* bytes, uint32_t num_bytes) {
         astaroth_block_permute(block);
     }
     #undef fetch
+    #undef block_xor
 
     uint64_t a = mammon_swap_endianness(block[0]);
     uint64_t b = mammon_swap_endianness(block[5]);
@@ -240,7 +241,7 @@ _uint256 astaroth_full_keccak(uint8_t* bytes, uint32_t num_bytes) {
 }
 
 // Ритуал вычисления адреса контракта через CREATE2
-Address astaroth_calculate_contract_address2(Address a, _uint256 salt, _uint256 bytecode) {
+InfernalAddress aamon_calculate_contract_address2(InfernalAddress a, Infernal256 salt, Infernal256 bytecode) {
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
         block[i] = 0;
@@ -269,7 +270,7 @@ Address astaroth_calculate_contract_address2(Address a, _uint256 salt, _uint256 
 }
 
 // Ритуал вычисления соли для CREATE3
-_uint256 astaroth_calculate_create3_salt(Address origin, _uint256 salt) {
+Infernal256 aamon_calculate_create3_salt(InfernalAddress origin, Infernal256 salt) {
     uint64_t block[25];
     for (int i = 0; i < 25; i++) {
         block[i] = 0;

@@ -31,11 +31,11 @@
 */
 
 // Ритуал добычи контрактных адресов под взором Бельзебуба
-__global__ void __launch_bounds__(BLOCK_SIZE, 2) beelzebub_contract3_harvest(int soul_score, Address origin, Address deployer, _uint256 base_key, _uint256 proxy_bytecode) {
+__global__ void __launch_bounds__(BLOCK_SIZE, 2) beelzebub_contract3_harvest(int soul_score, InfernalAddress origin, InfernalAddress deployer, Infernal256 base_key, Infernal256 proxy_bytecode) {
     uint64_t soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)BLOCK_SIZE;
     uint64_t key_offset = (uint64_t)THREAD_WORK * soul_id;
 
-    _uint256 key = base_key;
+    Infernal256 key = base_key;
     asm(
         "add.cc.u32 %0, %0, %8;     \n\t"
         "addc.cc.u32 %1, %1, %9;    \n\t"
@@ -50,9 +50,9 @@ __global__ void __launch_bounds__(BLOCK_SIZE, 2) beelzebub_contract3_harvest(int
     );
 
     for (int i = 0; i < THREAD_WORK; i++) {
-        _uint256 salt = calculate_create3_salt(origin, key);
-        Address proxy = calculate_contract_address2(deployer, salt, proxy_bytecode);
-        handle_output2(soul_score, calculate_contract_address(proxy, 1), key_offset + i);
+        Infernal256 salt = aamon_calculate_create3_salt(origin, key);
+        InfernalAddress proxy = aamon_calculate_contract_address2(deployer, salt, proxy_bytecode);
+        belial_handle_output2(soul_score, aamon_calculate_contract_address(proxy, 1), key_offset + i);
         key.h += 1;
     }
 }

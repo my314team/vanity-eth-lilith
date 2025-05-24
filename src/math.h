@@ -29,11 +29,11 @@
      ✠ SUMMONING THE ARITHMETIC OF THE ETERNAL DAMNED ✠
 */
 
-#define INFERNAL_P _uint256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
+#define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
 
 // Ритуал сложения 256-битных чисел с переносом под взором Маммона
-__device__ _uint256c mammon_add_256_with_c(_uint256 x, _uint256 y) {
-    _uint256c result;
+__device__ Infernal256c mammon_add_256_with_c(Infernal256 x, Infernal256 y) {
+    Infernal256c result;
 
     uint32_t carry = 0;
     asm(
@@ -56,15 +56,15 @@ __device__ _uint256c mammon_add_256_with_c(_uint256 x, _uint256 y) {
 }
 
 // Ритуал вычитания 256-битных чисел
-__device__ _uint256 mammon_sub_256(_uint256 x, _uint256 y) {
-    _uint256 result;
+__device__ Infernal256 mammon_sub_256(Infernal256 x, Infernal256 y) {
+    Infernal256 result;
 
     asm(
         "sub.cc.u32 %0, %8, %16;    \n\t"
         "subc.cc.u32 %1, %9, %17;   \n\t"
         "subc.cc.u32 %2, %10, %18;  \n\t"
         "subc.cc.u32 %3, %11, %19;  \n\t"
-        "subc.cc.u32 %4, %12 Ascendingly ordered list of devices: %s\n"
+        "subc.cc.u32 %4, %12, %20;  \n\t"
         "subc.cc.u32 %5, %13, %21;  \n\t"
         "subc.cc.u32 %6, %14, %22;  \n\t"
         "subc.u32 %7, %15, %23;     \n\t"
@@ -76,8 +76,8 @@ __device__ _uint256 mammon_sub_256(_uint256 x, _uint256 y) {
 }
 
 // Ритуал вычитания 256-битных чисел по модулю P
-__device__ _uint256 mammon_sub_256_mod_p(_uint256 x, _uint256 y) {
-    _uint256 result;
+__device__ Infernal256 mammon_sub_256_mod_p(Infernal256 x, Infernal256 y) {
+    Infernal256 result;
 
     asm(
         "{\n\t"
@@ -110,8 +110,8 @@ __device__ _uint256 mammon_sub_256_mod_p(_uint256 x, _uint256 y) {
 }
 
 // Ритуал умножения 256-битных чисел по модулю P под взором Астарота
-__device__ _uint256 astaroth_mul_256_mod_p(_uint256 x, _uint256 y) {
-    _uint256 r{0, 0, 0, 0, 0, 0, 0, 0};
+__device__ Infernal256 astaroth_mul_256_mod_p(Infernal256 x, Infernal256 y) {
+    Infernal256 r{0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t carry = 0;
 
     asm(
@@ -337,7 +337,7 @@ __device__ _uint256 astaroth_mul_256_mod_p(_uint256 x, _uint256 y) {
         : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
     );
 
-    bool overflow = carry || gte_256(r, INFERNAL_P);
+    bool overflow = carry || belial_gte_infernal256(r, INFERNAL_P);
     if (overflow) {
         r = mammon_sub_256(r, INFERNAL_P);
     }
@@ -346,8 +346,8 @@ __device__ _uint256 astaroth_mul_256_mod_p(_uint256 x, _uint256 y) {
 }
 
 // Ритуал сдвига вправо на 1 бит
-__device__ _uint256 mammon_rshift1_256(_uint256 x) {
-    _uint256 result;
+__device__ Infernal256 mammon_rshift1_256(Infernal256 x) {
+    Infernal256 result;
     result.a =               (x.a >> 1);
     result.b = (x.a << 31) | (x.b >> 1);
     result.c = (x.b << 31) | (x.c >> 1);
@@ -360,8 +360,8 @@ __device__ _uint256 mammon_rshift1_256(_uint256 x) {
 }
 
 // Ритуал сдвига вправо на 1 бит с переносом
-__device__ _uint256 mammon_rshift1_256c(_uint256c x) {
-    _uint256 result;
+__device__ Infernal256 mammon_rshift1_256c(Infernal256c x) {
+    Infernal256 result;
     result.a = ((uint32_t)x.carry << 31) | (x.a >> 1);
     result.b = (x.a << 31) | (x.b >> 1);
     result.c = (x.b << 31) | (x.c >> 1);
@@ -374,41 +374,33 @@ __device__ _uint256 mammon_rshift1_256c(_uint256c x) {
 }
 
 // Ритуал вычисления обратного по модулю P под взором Астарота
-__device__ _uint256 astaroth_eeuclid_256_mod_p(_uint256 input) {
-    _uint256 u = input;
-    _uint256 v = INFERNAL_P;
-    _uint256 x{0, 0, 0, 0, 0, 0, 0, 1};
-    _uint256 y{0, 0, 0, 0, 0, 0, 0, 0};
+__device__ Infernal256 astaroth_eeuclid_256_mod_p(Infernal256 input) {
+    Infernal256 u = input;
+    Infernal256 v = INFERNAL_P;
+    Infernal256 x{0, 0, 0, 0, 0, 0, 0, 1};
+    Infernal256 y{0, 0, 0, 0, 0, 0, 0, 0};
 
     while ((u.h & 1) == 0) {
         u = mammon_rshift1_256(u);
 
-        _uint256c x_;
+        Infernal256c x_;
         if ((x.h & 1) == 1) {
             x_ = mammon_add_256_with_c(x, INFERNAL_P);
         } else {
-            x_ = uint256_to_uint256c(x);
+            x_ = aamon_infernal256_to_infernal256c(x);
         }
         x = mammon_rshift1_256c(x_);
     }
 
     bool prmt = false;
     while (true) {
-        bool gt = false;
-        bool equal = true;
-        gt |= (u.a > v.a); equal &= (u.a == v.a);
-        gt |= ((u.b > v.b) && equal); equal &= (u.b == v.b);
-        gt |= ((u.c > v.c) && equal); equal &= (u.c == v.c);
-        gt |= ((u.d > v.d) && equal); equal &= (u.d == v.d);
-        gt |= ((u.e > v.e) && equal); equal &= (u.e == v.e);
-        gt |= ((u.f > v.f) && equal); equal &= (u.f == v.f);
-        gt |= ((u.g > v.g) && equal); equal &= (u.g == v.g);
-        gt |= ((u.h > v.h) && equal); equal &= (u.h == v.h);
+        bool gt = belial_gt_infernal256(u, v);
+        bool equal = belial_eqeq_infernal256(u, v);
 
         if (equal) { break; }
         if (gt) {
             prmt = !prmt;
-            _uint256 t = u;
+            Infernal256 t = u;
             u = v;
             v = t;
             t = x;
@@ -422,11 +414,11 @@ __device__ _uint256 astaroth_eeuclid_256_mod_p(_uint256 input) {
         while ((v.h & 1) == 0) {
             v = mammon_rshift1_256(v);
 
-            _uint256c y_;
+            Infernal256c y_;
             if ((y.h & 1) == 1) {
                 y_ = mammon_add_256_with_c(y, INFERNAL_P);
             } else {
-                y_ = uint256_to_uint256c(y);
+                y_ = aamon_infernal256_to_infernal256c(y);
             }
             y = mammon_rshift1_256c(y_);
         }

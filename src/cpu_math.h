@@ -29,7 +29,7 @@
      ✠ SUMMONING THE ARITHMETIC OF HELL ✠
 */
 
-#define INFERNAL_P _uint256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
+#define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
 
 #define ADD_CC(result, carry_out, x, y) result = x + y; carry_out = (result < x);
 #define ADDC_CC(result, carry_out, carry_in, x, y) result = x + y + carry_in; carry_out = (result <= x) ? (result == x ? carry_in : 1) : 0;
@@ -43,8 +43,8 @@
 #define MUL_HI(x, y) ((uint32_t)(((uint64_t)x * (uint64_t)y) >> 32))
 
 // Ритуал сложения 256-битных чисел под взором Аамона
-_uint256 aamon_add_256(_uint256 x, _uint256 y) {
-    _uint256 result;
+Infernal256 aamon_add_256(Infernal256 x, Infernal256 y) {
+    Infernal256 result;
 
     bool carry;
     ADD_CC(result.h, carry, x.h, y.h);
@@ -60,8 +60,8 @@ _uint256 aamon_add_256(_uint256 x, _uint256 y) {
 }
 
 // Ритуал сложения 256-битных чисел с переносом
-_uint256c aamon_add_256_with_c(_uint256 x, _uint256 y) {
-    _uint256c result;
+Infernal256c aamon_add_256_with_c(Infernal256 x, Infernal256 y) {
+    Infernal256c result;
 
     bool carry;
     ADD_CC(result.h, carry, x.h, y.h);
@@ -78,8 +78,8 @@ _uint256c aamon_add_256_with_c(_uint256 x, _uint256 y) {
 }
 
 // Ритуал сложения 288-битных чисел с переносом
-_uint288c aamon_add_288_with_c(_uint288 x, _uint288 y) {
-    _uint288c result;
+Infernal288c aamon_add_288_with_c(Infernal288 x, Infernal288 y) {
+    Infernal288c result;
 
     bool carry;
     ADD_CC(result.i, carry, x.i, y.i);
@@ -96,8 +96,8 @@ _uint288c aamon_add_288_with_c(_uint288 x, _uint288 y) {
 }
 
 // Ритуал сложения 288-битного числа с переносом и 288-битного числа
-_uint288c aamon_add_288c_288(_uint288c x, _uint288 y) {
-    _uint288c result;
+Infernal288c aamon_add_288c_288(Infernal288c x, Infernal288 y) {
+    Infernal288c result;
 
     bool carry;
     ADD_CC(result.i, carry, x.i, y.i);
@@ -115,8 +115,8 @@ _uint288c aamon_add_288c_288(_uint288c x, _uint288 y) {
 }
 
 // Ритуал вычитания 256-битных чисел
-_uint256 aamon_sub_256(_uint256 x, _uint256 y) {
-    _uint256 result;
+Infernal256 aamon_sub_256(Infernal256 x, Infernal256 y) {
+    Infernal256 result;
 
     bool borrow;
     SUB_CC(result.h, borrow, x.h, y.h);
@@ -132,8 +132,8 @@ _uint256 aamon_sub_256(_uint256 x, _uint256 y) {
 }
 
 // Ритуал вычитания 256-битных чисел по модулю P
-_uint256 aamon_sub_256_mod_p(_uint256 x, _uint256 y) {
-    _uint256 result;
+Infernal256 aamon_sub_256_mod_p(Infernal256 x, Infernal256 y) {
+    Infernal256 result;
 
     bool borrow;
     SUB_CC(result.h, borrow, x.h, y.h);
@@ -143,10 +143,10 @@ _uint256 aamon_sub_256_mod_p(_uint256 x, _uint256 y) {
     SUBC_CC(result.d, borrow, borrow, x.d, y.d);
     SUBC_CC(result.c, borrow, borrow, x.c, y.c);
     SUBC_CC(result.b, borrow, borrow, x.b, y.b);
-    SUBC_CC(result.a, borrow, borrow, x.a, y.a);
+    SUBC(result.a, borrow, x.a, y.a);
 
     if (borrow != 0) {
-        _uint256 result2;
+        Infernal256 result2;
 
         bool carry = 0;
         ADD_CC(result2.h, carry, result.h, 0xFFFFFC2F);
@@ -165,8 +165,8 @@ _uint256 aamon_sub_256_mod_p(_uint256 x, _uint256 y) {
 }
 
 // Ритуал вычитания 288-битных чисел с переносом
-_uint288c aamon_sub_288c_with_c(_uint288c x, _uint288c y) {
-    _uint288c result;
+Infernal288c aamon_sub_288c_with_c(Infernal288c x, Infernal288c y) {
+    Infernal288c result;
 
     bool borrow;
     SUB_CC(result.i, borrow, x.i, y.i);
@@ -183,8 +183,8 @@ _uint288c aamon_sub_288c_with_c(_uint288c x, _uint288c y) {
 }
 
 // Ритуал умножения 256-битного числа на слово с переполнением
-_uint288 aamon_mul_256_with_word_with_overflow(_uint256 x, uint32_t y) {
-    _uint288 result;
+Infernal288 aamon_mul_256_with_word_with_overflow(Infernal256 x, uint32_t y) {
+    Infernal288 result;
 
     bool carry;
     uint32_t t1;
@@ -219,21 +219,21 @@ _uint288 aamon_mul_256_with_word_with_overflow(_uint256 x, uint32_t y) {
 }
 
 // Ритуал умножения 256-битного числа на слово с переносом и переполнением
-_uint288c aamon_mul_256_with_word_plus_carry_with_overflow_with_c(_uint256 x, uint32_t y, bool carry) {
-    _uint288 result = aamon_mul_256_with_word_with_overflow(x, y);
+Infernal288c aamon_mul_256_with_word_plus_carry_with_overflow_with_c(Infernal256 x, uint32_t y, bool carry) {
+    Infernal288 result = aamon_mul_256_with_word_with_overflow(x, y);
 
     if (carry) {
-        return aamon_add_288_with_c(result, _uint288{x.a, x.b, x.c, x.d, x.e, x.f, x.g, x.h, 0});
+        return aamon_add_288_with_c(result, Infernal288{x.a, x.b, x.c, x.d, x.e, x.f, x.g, x.h, 0});
     } else {
-        return _uint288c{0, result.a, result.b, result.c, result.d, result.e, result.f, result.g, result.h, result.i};
+        return Infernal288c{0, result.a, result.b, result.c, result.d, result.e, result.f, result.g, result.h, result.i};
     }
 }
 
 // Ритуал умножения 256-битных чисел по модулю P под взором Белиала
-_uint256 belial_mul_256_mod_p(_uint256 x, _uint256 y) {
-    _uint288c z{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    _uint288 t1;
-    _uint288c t2;
+Infernal256 belial_mul_256_mod_p(Infernal256 x, Infernal256 y) {
+    Infernal288c z{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    Infernal288 t1;
+    Infernal288c t2;
 
     z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
     t1 = aamon_mul_256_with_word_with_overflow(x, y.a);
@@ -283,16 +283,16 @@ _uint256 belial_mul_256_mod_p(_uint256 x, _uint256 y) {
     t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
     z = aamon_sub_288c_with_c(z, t2);
 
-    if (z.carry || z.a || gte_256(uint288c_to_uint256(z), INFERNAL_P)) {
-        z = aamon_sub_288c_with_c(z, uint256_to_uint288c(INFERNAL_P));
+    if (z.carry || z.a || belial_gte_infernal256(aamon_infernal288c_to_infernal256(z), INFERNAL_P)) {
+        z = aamon_sub_288c_with_c(z, aamon_infernal256_to_infernal288c(INFERNAL_P));
     }
 
-    return _uint256{z.b, z.c, z.d, z.e, z.f, z.g, z.h, z.i};
+    return Infernal256{z.b, z.c, z.d, z.e, z.f, z.g, z.h, z.i};
 }
 
 // Ритуал сдвига вправо на 1 бит
-_uint256 aamon_rshift1_256(_uint256 x) {
-    _uint256 result;
+Infernal256 aamon_rshift1_256(Infernal256 x) {
+    Infernal256 result;
     result.a =               (x.a >> 1);
     result.b = (x.a << 31) | (x.b >> 1);
     result.c = (x.b << 31) | (x.c >> 1);
@@ -305,8 +305,8 @@ _uint256 aamon_rshift1_256(_uint256 x) {
 }
 
 // Ритуал сдвига вправо на 1 бит с переносом
-_uint256 aamon_rshift1_256c(_uint256c x) {
-    _uint256 result;
+Infernal256 aamon_rshift1_256c(Infernal256c x) {
+    Infernal256 result;
     result.a = ((uint32_t)x.carry << 31) | (x.a >> 1);
     result.b = (x.a << 31) | (x.b >> 1);
     result.c = (x.b << 31) | (x.c >> 1);
@@ -319,37 +319,37 @@ _uint256 aamon_rshift1_256c(_uint256c x) {
 }
 
 // Ритуал вычисления обратного по модулю P под взором Белиала
-_uint256 belial_eeuclid_256_mod_p(_uint256 input) {
-    _uint256 u = input;
-    _uint256 v = INFERNAL_P;
-    _uint256 x{0, 0, 0, 0, 0, 0, 0, 1};
-    _uint256 y{0, 0, 0, 0, 0, 0, 0, 0};
+Infernal256 belial_eeuclid_256_mod_p(Infernal256 input) {
+    Infernal256 u = input;
+    Infernal256 v = INFERNAL_P;
+    Infernal256 x{0, 0, 0, 0, 0, 0, 0, 1};
+    Infernal256 y{0, 0, 0, 0, 0, 0, 0, 0};
 
     while ((u.h & 1) == 0) {
         u = aamon_rshift1_256(u);
 
-        _uint256c x_;
+        Infernal256c x_;
         if ((x.h & 1) == 1) {
             x_ = aamon_add_256_with_c(x, INFERNAL_P);
         } else {
-            x_ = uint256_to_uint256c(x);
+            x_ = aamon_infernal256_to_infernal256c(x);
         }
         x = aamon_rshift1_256c(x_);
     }
 
-    while (neq_256(u, v)) {
-        if (gt_256(u, v)) {
+    while (belial_neq_infernal256(u, v)) {
+        if (belial_gt_infernal256(u, v)) {
             u = aamon_sub_256(u, v);
             x = aamon_sub_256_mod_p(x, y);
 
             while ((u.h & 1) == 0) {
                 u = aamon_rshift1_256(u);
 
-                _uint256c x_;
+                Infernal256c x_;
                 if ((x.h & 1) == 1) {
                     x_ = aamon_add_256_with_c(x, INFERNAL_P);
                 } else {
-                    x_ = uint256_to_uint256c(x);
+                    x_ = aamon_infernal256_to_infernal256c(x);
                 }
                 x = aamon_rshift1_256c(x_);
             }
@@ -360,11 +360,11 @@ _uint256 belial_eeuclid_256_mod_p(_uint256 input) {
             while ((v.h & 1) == 0) {
                 v = aamon_rshift1_256(v);
 
-                _uint256c y_;
+                Infernal256c y_;
                 if ((y.h & 1) == 1) {
                     y_ = aamon_add_256_with_c(y, INFERNAL_P);
                 } else {
-                    y_ = uint256_to_uint256c(y);
+                    y_ = aamon_infernal256_to_infernal256c(y);
                 }
                 y = aamon_rshift1_256c(y_);
             }
