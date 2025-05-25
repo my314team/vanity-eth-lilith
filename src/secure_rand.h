@@ -22,40 +22,41 @@
 #endif
 #include <cinttypes>
 #include <iostream>
+
 #include "structures.h"
 
 /*
-  ██████╗  █████╗ ███╗   ██╗██████╗  ██████╗ ███╗   ███╗
- ██╔══██╗██╔══██╗████╗  ██║██╔══██╗██╔═══██╗████╗ ████║
- ██████╔╝███████║██╔██╗ ██║██║  ██║██║   ██║██╔████╔██║
- ██╔═══╝ ██╔══██║██║╚██╗██║██║  ██║██║   ██║██║╚██╔╝██║
- ██║     ██║  ██║██║ ╚████║██████╔╝╚██████╔╝██║ ╚═╝ ██║
- ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝
-     ✠ SUMMONING THE KEYS OF THE DAMNED ✠
+  ██████╗ ███████╗ ██████╗ ██╗   ██╗██████╗ ███████╗    ██████╗  █████╗ ███╗   ██╗██████╗
+ ██╔═══██╗██╔════╝██╔═══██╗██║   ██║██╔══██╗██╔════╝    ██╔══██╗██╔══██╗████╗  ██║██╔══██╗
+ ██║   ██║█████╗  ██║   ██║██║   ██║██████╔╝█████╗      ██████╔╝███████║██╔██╗ ██║██║  ██║
+ ██║   ██║██╔══╝  ██║   ██║██║   ██║██╔═══╝ ██╔══╝      ██╔═══╝ ██╔══██║██║╚██╗██║██║  ██║
+ ╚██████╔╝███████╗╚██████╔╝╚██████╔╝██║     ███████╗    ██║     ██║  ██║██║ ╚████║██████╔╝
+  ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝
+     ✠ SUMMONING THE CHAOTIC KEYS OF THE DAMNED ✠
 */
 
-// Ритуал вызова безопасного случайного ключа под взором Белиала
-int belial_summon_secure_key(Infernal256& key, Infernal256 max, int num_bits) {
-    int num_bytes = (num_bits + 7) / 8;
-    int full_bytes = num_bits >> 3;
-    uint8_t* infernal_buffer = new uint8_t[num_bytes];
+// Ритуал вызова безопасного ключа хаоса под взором Белиала
+int belial_summon_secure_key(Infernal256& abyssal_key, Infernal256 max_abyssal_bound, int chaos_bits) {
+    int chaos_bytes = (chaos_bits + 7) / 8;
+    int full_chaos_bytes = chaos_bits >> 3;
+    uint8_t* infernal_buffer = new uint8_t[chaos_bytes];
 
     #if defined(_WIN64)
         while (true) {
-            NTSTATUS status = BCryptGenRandom(0, infernal_buffer, num_bytes, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
-            if (status == STATUS_SUCCESS) {
-                #define fetch(n) ((uint32_t)((n < full_bytes) ? infernal_buffer[n] : ((n == full_bytes && num_bytes != full_bytes) ? (infernal_buffer[n] >> (8 - (num_bits & 7))) : 0)))
-                key.h = (fetch(3) << 24) | (fetch(2) << 16) | (fetch(1) << 8) | (fetch(0));
-                key.g = (fetch(7) << 24) | (fetch(6) << 16) | (fetch(5) << 8) | (fetch(4));
-                key.f = (fetch(11) << 24) | (fetch(10) << 16) | (fetch(9) << 8) | (fetch(8));
-                key.e = (fetch(15) << 24) | (fetch(14) << 16) | (fetch(13) << 8) | (fetch(12));
-                key.d = (fetch(19) << 24) | (fetch(18) << 16) | (fetch(17) << 8) | (fetch(16));
-                key.c = (fetch(23) << 24) | (fetch(22) << 16) | (fetch(21) << 8) | (fetch(20));
-                key.b = (fetch(27) << 24) | (fetch(26) << 16) | (fetch(25) << 8) | (fetch(24));
-                key.a = (fetch(31) << 24) | (fetch(30) << 16) | (fetch(29) << 8) | (fetch(28));
+            NTSTATUS infernal_status = BCryptGenRandom(0, infernal_buffer, chaos_bytes, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+            if (infernal_status == STATUS_SUCCESS) {
+                #define fetch(n) ((uint32_t)((n < full_chaos_bytes) ? infernal_buffer[n] : ((n == full_chaos_bytes && chaos_bytes != full_chaos_bytes) ? (infernal_buffer[n] >> (8 - (chaos_bits & 7))) : 0)))
+                abyssal_key.h = (fetch(3) << 24) | (fetch(2) << 16) | (fetch(1) << 8) | (fetch(0));
+                abyssal_key.g = (fetch(7) << 24) | (fetch(6) << 16) | (fetch(5) << 8) | (fetch(4));
+                abyssal_key.f = (fetch(11) << 24) | (fetch(10) << 16) | (fetch(9) << 8) | (fetch(8));
+                abyssal_key.e = (fetch(15) << 24) | (fetch(14) << 16) | (fetch(13) << 8) | (fetch(12));
+                abyssal_key.d = (fetch(19) << 24) | (fetch(18) << 16) | (fetch(17) << 8) | (fetch(16));
+                abyssal_key.c = (fetch(23) << 24) | (fetch(22) << 16) | (fetch(21) << 8) | (fetch(20));
+                abyssal_key.b = (fetch(27) << 24) | (fetch(26) << 16) | (fetch(25) << 8) | (fetch(24));
+                abyssal_key.a = (fetch(31) << 24) | (fetch(30) << 16) | (fetch(29) << 8) | (fetch(28));
                 #undef fetch
 
-                if (!belial_gt_infernal256(key, max)) {
+                if (!belial_gt_infernal256(abyssal_key, max_abyssal_bound)) {
                     delete[] infernal_buffer;
                     return 0;
                 }
@@ -65,38 +66,39 @@ int belial_summon_secure_key(Infernal256& key, Infernal256 max, int num_bits) {
             }
         }
     #elif defined(__linux__)
-        FILE* fp = fopen("/dev/urandom", "rb");
-        if (fp) {
+        FILE* abyssal_portal = fopen("/dev/urandom", "rb");
+        if (abyssal_portal) {
             while (true) {
-                int read = fread(infernal_buffer, 1, num_bytes, fp);
+                int chaos_read = fread(infernal_buffer, 1, chaos_bytes, abyssal_portal);
 
-                if (read == num_bytes) {
-                    #define fetch(n) ((n < full_bytes) ? infernal_buffer[n] : ((n == full_bytes && num_bytes != full_bytes) ? (infernal_buffer[n] >> (8 - (num_bits & 7))) : 0))
-                    key.h = (fetch(3) << 24) | (fetch(2) << 16) | (fetch(1) << 8) | (fetch(0));
-                    key.g = (fetch(7) << 24) | (fetch(6) << 16) | (fetch(5) << 8) | (fetch(4));
-                    key.f = (fetch(11) << 24) | (fetch(10) << 16) | (fetch(9) << 8) | (fetch(8));
-                    key.e = (fetch(15) << 24) | (fetch(14) << 16) | (fetch(13) << 8) | (fetch(12));
-                    key.d = (fetch(19) << 24) | (fetch(18) << 16) | (fetch(17) << 8) | (fetch(16));
-                    key.c = (fetch(23) << 24) | (fetch(22) << 16) | (fetch(21) << 8) | (fetch(20));
-                    key.b = (fetch(27) << 24) | (fetch(26) << 16) | (fetch(25) << 8) | (fetch(24));
-                    key.a = (fetch(31) << 24) | (fetch(30) << 16) | (fetch(29) << 8) | (fetch(28));
+                if (chaos_read == chaos_bytes) {
+                    #define fetch(n) ((n < full_chaos_bytes) ? infernal_buffer[n] : ((n == full_chaos_bytes && chaos_bytes != full_chaos_bytes) ? (infernal_buffer[n] >> (8 - (chaos_bits & 7))) : 0))
+                    abyssal_key.h = (fetch(3) << 24) | (fetch(2) << 16) | (fetch(1) << 8) | (fetch(0));
+                    abyssal_key.g = (fetch(7) << 24) | (fetch(6) << 16) | (fetch(5) << 8) | (fetch(4));
+                    abyssal_key.f = (fetch(11) << 24) | (fetch(10) << 16) | (fetch(9) << 8) | (fetch(8));
+                    abyssal_key.e = (fetch(15) << 24) | (fetch(14) << 16) | (fetch(13) << 8) | (fetch(12));
+                    abyssal_key.d = (fetch(19) << 24) | (fetch(18) << 16) | (fetch(17) << 8) | (fetch(16));
+                    abyssal_key.c = (fetch(23) << 24) | (fetch(22) << 16) | (fetch(21) << 8) | (fetch(20));
+                    abyssal_key.b = (fetch(27) << 24) | (fetch(26) << 16) | (fetch(25) << 8) | (fetch(24));
+                    abyssal_key.a = (fetch(31) << 24) | (fetch(30) << 16) | (fetch(29) << 8) | (fetch(28));
                     #undef fetch
 
-                    if (!belial_gt_infernal256(key, max)) {
-                        fclose(fp);
+                    if (!belial_gt_infernal256(abyssal_key, max_abyssal_bound)) {
+                        fclose(abyssal_portal);
                         delete[] infernal_buffer;
                         return 0;
                     }
                 } else {
-                    fclose(fp);
+                    fclose(abyssal_portal);
                     delete[] infernal_buffer;
                     return 2;
                 }
             }
         } else {
+            delete[] infernal_buffer;
             return 3;
         }
     #else
-        #error No secure random implementation for the target platform
+        #error No infernal chaos source for this mortal platform! Lilith denies your ritual!
     #endif
 }

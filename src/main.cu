@@ -15,8 +15,6 @@
     <https://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <string.h>
 #if defined(_WIN64)
     #define WIN32_NO_STATUS
     #include <windows.h>
@@ -41,16 +39,15 @@
 #include "cpu_curve_math.h"
 #include "cpu_keccak.h"
 #include "cpu_math.h"
-#include "keccak.h"
-#include "constants.h"
-
-// Глобальные константы CUDA
-__constant__ uint64_t infernal_memory[2 + 10000 * 3];
-__constant__ AbyssalCurvePoint infernal_addends[THREAD_WORK - 1];
-__constant__ AbyssalCurvePoint infernal_thread_offsets[BLOCK_SIZE];
 
 #define INFERNAL_BUFFER_SIZE 10000
-#define INFERNAL_GRID_WORK ((uint64_t)BLOCK_SIZE * (uint64_t)INFERNAL_GRID_SIZE * (uint64_t)THREAD_WORK)
+#define ABYSSAL_BLOCK_SIZE 256U
+#define THREAD_PACT (1U << 8)
+
+// Глобальные константы CUDA в бездне
+__constant__ AbyssalCurvePoint infernal_thread_gates[ABYSSAL_BLOCK_SIZE];
+__constant__ AbyssalCurvePoint infernal_addends[THREAD_PACT - 1];
+__device__ uint64_t infernal_abyss[2 + INFERNAL_BUFFER_SIZE * 3];
 
 /*
   ██████╗ ██╗████████╗██╗   ██╗ █████╗ ██╗
@@ -115,37 +112,37 @@ __device__ int aamon_score_leading_zeros(InfernalAddress a) {
 #endif
 
 // Ритуал записи результата в адский буфер 🔥
-__device__ void belial_handle_output(int soul_score_method, InfernalAddress a, uint64_t key, bool inv) {
+__device__ void belial_handle_output(int soul_score_ritual, InfernalAddress a, uint64_t key, bool inv) {
     int score = 0;
-    if (soul_score_method == 0) { score = aamon_score_leading_zeros(a); }
-    else if (soul_score_method == 1) { score = aamon_score_zero_bytes(a); }
+    if (soul_score_ritual == 0) { score = aamon_score_leading_zeros(a); }
+    else if (soul_score_ritual == 1) { score = aamon_score_zero_bytes(a); }
 
-    if (score >= infernal_memory[1]) {
-        atomicMax_ul(&infernal_memory[1], score);
-        if (score >= infernal_memory[1]) {
-            uint32_t idx = atomicAdd_ul(&infernal_memory[0], 1);
+    if (score >= infernal_abyss[1]) {
+        atomicMax_ul(&infernal_abyss[1], score);
+        if (score >= infernal_abyss[1]) {
+            uint32_t idx = atomicAdd_ul(&infernal_abyss[0], 1);
             if (idx < INFERNAL_BUFFER_SIZE) {
-                infernal_memory[2 + idx] = key;
-                infernal_memory[INFERNAL_BUFFER_SIZE + 2 + idx] = score;
-                infernal_memory[INFERNAL_BUFFER_SIZE * 2 + 2 + idx] = inv;
+                infernal_abyss[2 + idx] = key;
+                infernal_abyss[INFERNAL_BUFFER_SIZE + 2 + idx] = score;
+                infernal_abyss[INFERNAL_BUFFER_SIZE * 2 + 2 + idx] = inv;
             }
         }
     }
 }
 
 // Ритуал записи результата для контрактов 🔥
-__device__ void belial_handle_output2(int soul_score_method, InfernalAddress a, uint64_t key) {
+__device__ void belial_handle_output2(int soul_score_ritual, InfernalAddress a, uint64_t key) {
     int score = 0;
-    if (soul_score_method == 0) { score = aamon_score_leading_zeros(a); }
-    else if (soul_score_method == 1) { score = aamon_score_zero_bytes(a); }
+    if (soul_score_ritual == 0) { score = aamon_score_leading_zeros(a); }
+    else if (soul_score_ritual == 1) { score = aamon_score_zero_bytes(a); }
 
-    if (score >= infernal_memory[1]) {
-        atomicMax_ul(&infernal_memory[1], score);
-        if (score >= infernal_memory[1]) {
-            uint32_t idx = atomicAdd_ul(&infernal_memory[0], 1);
+    if (score >= infernal_abyss[1]) {
+        atomicMax_ul(&infernal_abyss[1], score);
+        if (score >= infernal_abyss[1]) {
+            uint32_t idx = atomicAdd_ul(&infernal_abyss[0], 1);
             if (idx < INFERNAL_BUFFER_SIZE) {
-                infernal_memory[2 + idx] = key;
-                infernal_memory[INFERNAL_BUFFER_SIZE + 2 + idx] = score;
+                infernal_abyss[2 + idx] = key;
+                infernal_abyss[INFERNAL_BUFFER_SIZE + 2 + idx] = score;
             }
         }
     }
@@ -163,12 +160,12 @@ uint32_t INFERNAL_GRID_SIZE = 1U << 15;
 struct InfernalMessage {
     uint64_t time;
     int status;
-    int device_index;
+    int demon_index;
     cudaError_t error;
     double speed;
-    int results_count;
-    Infernal256* results;
-    int* scores;
+    int souls_count;
+    Infernal256* souls;
+    int* soul_scores;
 };
 
 std::queue<InfernalMessage> infernal_message_queue;
@@ -178,10 +175,10 @@ std::mutex infernal_message_queue_mutex;
     cudaError_t e = call; \
     if (e != cudaSuccess) { \
         infernal_message_queue_mutex.lock(); \
-        infernal_message_queue.push(InfernalMessage{milliseconds(), 1, device_index, e}); \
+        infernal_message_queue.push(InfernalMessage{milliseconds(), 1, demon_index, e}); \
         infernal_message_queue_mutex.unlock(); \
-        if (thread_offsets_host != 0) { cudaFreeHost(thread_offsets_host); } \
-        if (infernal_memory_host != 0) { cudaFreeHost(infernal_memory_host); } \
+        if (thread_gates_host != 0) { cudaFreeHost(thread_gates_host); } \
+        if (infernal_abyss_host != 0) { cudaFreeHost(infernal_abyss_host); } \
         cudaDeviceReset(); \
         return; \
     } \
@@ -191,61 +188,63 @@ uint64_t milliseconds() {
     return (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())).count();
 }
 
-// Ритуал вызова демонов для добычи адресов 🖤
-void asmodeus_host_ritual(int device, int device_index, int soul_score_method, int mode, InfernalAddress origin_address, InfernalAddress deployer_address, Infernal256 bytecode) {
-    AbyssalCurvePoint* block_offsets = 0;
+// Ритуал вызова демонов для добычи ключей хаоса 🖤
+void asmodeus_host_ritual(int demon_id, int demon_index, int soul_score_ritual, int mode, InfernalAddress origin_gate, InfernalAddress deployer_gate, Infernal256 abyssal_bytecode) {
+    uint64_t GRID_PACT = ((uint64_t)ABYSSAL_BLOCK_SIZE * (uint64_t)INFERNAL_GRID_SIZE * (uint64_t)THREAD_PACT);
+
+    AbyssalCurvePoint* block_gates = 0;
     AbyssalCurvePoint* offsets = 0;
-    AbyssalCurvePoint* thread_offsets_host = 0;
+    AbyssalCurvePoint* thread_gates_host = 0;
 
-    uint64_t* infernal_memory_host = 0;
-    uint64_t* max_score_host;
-    uint64_t* output_counter_host;
-    uint64_t* output_buffer_host;
-    uint64_t* output_buffer2_host;
-    uint64_t* output_buffer3_host;
+    uint64_t* infernal_abyss_host = 0;
+    uint64_t* max_soul_score_host;
+    uint64_t* soul_counter_host;
+    uint64_t* soul_buffer_host;
+    uint64_t* soul_score_buffer_host;
+    uint64_t* soul_inv_buffer_host;
 
-    gpu_summon_assert(cudaSetDevice(device));
+    gpu_summon_assert(cudaSetDevice(demon_id));
 
-    gpu_summon_assert(cudaHostAlloc(&infernal_memory_host, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t), cudaHostAllocDefault));
-    output_counter_host = infernal_memory_host;
-    max_score_host = infernal_memory_host + 1;
-    output_buffer_host = max_score_host + 1;
-    output_buffer2_host = output_buffer_host + INFERNAL_BUFFER_SIZE;
-    output_buffer3_host = output_buffer2_host + INFERNAL_BUFFER_SIZE;
+    gpu_summon_assert(cudaHostAlloc(&infernal_abyss_host, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t), cudaHostAllocDefault));
+    soul_counter_host = infernal_abyss_host;
+    max_soul_score_host = infernal_abyss_host + 1;
+    soul_buffer_host = max_soul_score_host + 1;
+    soul_score_buffer_host = soul_buffer_host + INFERNAL_BUFFER_SIZE;
+    soul_inv_buffer_host = soul_score_buffer_host + INFERNAL_BUFFER_SIZE;
 
-    output_counter_host[0] = 0;
-    max_score_host[0] = 2;
-    gpu_summon_assert(cudaMemcpyToSymbol(infernal_memory, infernal_memory_host, 2 * sizeof(uint64_t)));
+    soul_counter_host[0] = 0;
+    max_soul_score_host[0] = 2;
+    gpu_summon_assert(cudaMemcpyToSymbol(infernal_abyss, infernal_abyss_host, 2 * sizeof(uint64_t)));
     gpu_summon_assert(cudaDeviceSynchronize());
 
     if (mode == 0 || mode == 1) {
-        gpu_summon_assert(cudaMalloc(&block_offsets, INFERNAL_GRID_SIZE * sizeof(AbyssalCurvePoint)));
-        gpu_summon_assert(cudaMalloc(&offsets, (uint64_t)INFERNAL_GRID_SIZE * BLOCK_SIZE * sizeof(AbyssalCurvePoint)));
-        thread_offsets_host = new AbyssalCurvePoint[BLOCK_SIZE];
-        gpu_summon_assert(cudaHostAlloc(&thread_offsets_host, BLOCK_SIZE * sizeof(AbyssalCurvePoint), cudaHostAllocWriteCombined));
+        gpu_summon_assert(cudaMalloc(&block_gates, INFERNAL_GRID_SIZE * sizeof(AbyssalCurvePoint)));
+        gpu_summon_assert(cudaMalloc(&offsets, (uint64_t)INFERNAL_GRID_SIZE * ABYSSAL_BLOCK_SIZE * sizeof(AbyssalCurvePoint)));
+        thread_gates_host = new AbyssalCurvePoint[ABYSSAL_BLOCK_SIZE];
+        gpu_summon_assert(cudaHostAlloc(&thread_gates_host, ABYSSAL_BLOCK_SIZE * sizeof(AbyssalCurvePoint), cudaHostAllocWriteCombined));
     }
 
-    Infernal256 max_key;
+    Infernal256 max_abyssal_key;
     if (mode == 0 || mode == 1) {
-        Infernal256 GRID_WORK = belial_mul_256_mod_p(belial_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK}, Infernal256{0, 0, 0, 0, 0, 0, 0, BLOCK_SIZE}), Infernal256{0, 0, 0, 0, 0, 0, 0, INFERNAL_GRID_SIZE});
-        max_key = Infernal256{0x7FFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x5D576E73, 0x57A4501D, 0xDFE92F46, 0x681B20A0};
-        max_key = aamon_sub_256(max_key, GRID_WORK);
-        max_key = aamon_sub_256(max_key, Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK});
-        max_key = aamon_add_256(max_key, Infernal256{0, 0, 0, 0, 0, 0, 0, 2});
+        Infernal256 GRID_PACT = mammon_mul_256_mod_p(mammon_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT}, Infernal256{0, 0, 0, 0, 0, 0, 0, ABYSSAL_BLOCK_SIZE}), Infernal256{0, 0, 0, 0, 0, 0, 0, INFERNAL_GRID_SIZE});
+        max_abyssal_key = Infernal256{0x7FFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x5D576E73, 0x57A4501D, 0xDFE92F46, 0x681B20A0};
+        max_abyssal_key = mammon_sub_256(max_abyssal_key, GRID_PACT);
+        max_abyssal_key = mammon_sub_256(max_abyssal_key, Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT});
+        max_abyssal_key = mammon_add_256(max_abyssal_key, Infernal256{0, 0, 0, 0, 0, 0, 0, 2});
     } else if (mode == 2 || mode == 3) {
-        max_key = Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+        max_abyssal_key = Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
     }
 
-    Infernal256 base_infernal_key{0, 0, 0, 0, 0, 0, 0, 0};
-    Infernal256 infernal_key_increment{0, 0, 0, 0, 0, 0, 0, 0};
+    Infernal256 base_abyssal_key{0, 0, 0, 0, 0, 0, 0, 0};
+    Infernal256 abyssal_key_increment{0, 0, 0, 0, 0, 0, 0, 0};
     int status;
     if (mode == 0 || mode == 1) {
-        status = belial_summon_secure_key(base_infernal_key, max_key, 255);
-        infernal_key_increment = belial_mul_256_mod_p(belial_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, BLOCK_SIZE}, Infernal256{0, 0, 0, 0, 0, 0, 0, INFERNAL_GRID_SIZE}), Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK});
+        status = belial_summon_secure_key(base_abyssal_key, max_abyssal_key, 255);
+        abyssal_key_increment = mammon_mul_256_mod_p(mammon_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, ABYSSAL_BLOCK_SIZE}, Infernal256{0, 0, 0, 0, 0, 0, 0, INFERNAL_GRID_SIZE}), Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT});
     } else if (mode == 2 || mode == 3) {
-        status = belial_summon_secure_key(base_infernal_key, max_key, 256);
-        infernal_key_increment = belial_mul_256_mod_p(belial_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, BLOCK_SIZE}, Infernal256{0, 0, 0, 0, 0, 0, 0, INFERNAL_GRID_SIZE}), Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK});
-        base_infernal_key.h &= ~(THREAD_WORK - 1);
+        status = belial_summon_secure_key(base_abyssal_key, max_abyssal_key, 256);
+        abyssal_key_increment = mammon_mul_256_mod_p(mammon_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, ABYSSAL_BLOCK_SIZE}, Infernal256{0, 0, 0, 0, 0, 0, 0, INFERNAL_GRID_SIZE}), Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT});
+        base_abyssal_key.h &= ~(THREAD_PACT - 1);
     }
 
     if (status) {
@@ -254,27 +253,27 @@ void asmodeus_host_ritual(int device, int device_index, int soul_score_method, i
         infernal_message_queue_mutex.unlock();
         return;
     }
-    Infernal256 infernal_key = base_infernal_key;
+    Infernal256 abyssal_key = base_abyssal_key;
 
     if (mode == 0 || mode == 1) {
-        AbyssalCurvePoint* addends_host = new AbyssalCurvePoint[THREAD_WORK - 1];
+        AbyssalCurvePoint* addends_host = new AbyssalCurvePoint[THREAD_PACT - 1];
         AbyssalCurvePoint p = INFERNAL_POINT;
-        for (int i = 0; i < THREAD_WORK - 1; i++) {
+        for (int i = 0; i < THREAD_PACT - 1; i++) {
             addends_host[i] = p;
             p = belial_point_summon(p, INFERNAL_POINT);
         }
-        gpu_summon_assert(cudaMemcpyToSymbol(infernal_addends, addends_host, (THREAD_WORK - 1) * sizeof(AbyssalCurvePoint)));
+        gpu_summon_assert(cudaMemcpyToSymbol(infernal_addends, addends_host, (THREAD_PACT - 1) * sizeof(AbyssalCurvePoint)));
         delete[] addends_host;
 
-        AbyssalCurvePoint* block_offsets_host = new AbyssalCurvePoint[INFERNAL_GRID_SIZE];
-        AbyssalCurvePoint block_offset = asmodeus_point_multiply(INFERNAL_POINT, Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK * BLOCK_SIZE});
+        AbyssalCurvePoint* block_gates_host = new AbyssalCurvePoint[INFERNAL_GRID_SIZE];
+        AbyssalCurvePoint block_offset = asmodeus_point_multiply(INFERNAL_POINT, Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT * ABYSSAL_BLOCK_SIZE});
         p = INFERNAL_POINT;
         for (int i = 0; i < INFERNAL_GRID_SIZE; i++) {
-            block_offsets_host[i] = p;
+            block_gates_host[i] = p;
             p = belial_point_summon(p, block_offset);
         }
-        gpu_summon_assert(cudaMemcpy(block_offsets, block_offsets_host, INFERNAL_GRID_SIZE * sizeof(AbyssalCurvePoint), cudaMemcpyHostToDevice));
-        delete[] block_offsets_host;
+        gpu_summon_assert(cudaMemcpy(block_gates, block_gates_host, INFERNAL_GRID_SIZE * sizeof(AbyssalCurvePoint), cudaMemcpyHostToDevice));
+        delete[] block_gates_host;
     }
 
     if (mode == 0 || mode == 1) {
@@ -282,7 +281,7 @@ void asmodeus_host_ritual(int device, int device_index, int soul_score_method, i
         gpu_summon_assert(cudaStreamCreate(&streams[0]));
         gpu_summon_assert(cudaStreamCreate(&streams[1]));
 
-        Infernal256 previous_infernal_key = infernal_key;
+        Infernal256 previous_abyssal_key = abyssal_key;
         bool first_ritual = true;
         uint64_t start_time;
         uint64_t end_time;
@@ -291,26 +290,26 @@ void asmodeus_host_ritual(int device, int device_index, int soul_score_method, i
         while (true) {
             if (!first_ritual) {
                 if (mode == 0) {
-                    belial_address_harvest<<<INFERNAL_GRID_SIZE, BLOCK_SIZE, 0, streams[0]>>>(soul_score_method, offsets);
+                    belial_address_harvest<<<INFERNAL_GRID_SIZE, ABYSSAL_BLOCK_SIZE, 0, streams[0]>>>(soul_score_ritual, offsets);
                 } else {
-                    belial_contract_harvest<<<INFERNAL_GRID_SIZE, BLOCK_SIZE, 0, streams[0]>>>(soul_score_method, offsets);
+                    belial_contract_harvest<<<INFERNAL_GRID_SIZE, ABYSSAL_BLOCK_SIZE, 0, streams[0]>>>(soul_score_ritual, offsets);
                 }
             }
 
             if (!first_ritual) {
-                previous_infernal_key = infernal_key;
-                infernal_key = aamon_add_256(infernal_key, infernal_key_increment);
-                if (belial_gte_infernal256(infernal_key, max_key)) {
-                    infernal_key = aamon_sub_256(infernal_key, max_key);
+                previous_abyssal_key = abyssal_key;
+                abyssal_key = mammon_add_256(abyssal_key, abyssal_key_increment);
+                if (belial_gte_infernal256(abyssal_key, max_abyssal_key)) {
+                    abyssal_key = mammon_sub_256(abyssal_key, max_abyssal_key);
                 }
             }
-            AbyssalCurvePoint thread_offset = asmodeus_point_multiply(INFERNAL_POINT, Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK});
-            AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, aamon_add_256(Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK - 1}, infernal_key));
-            for (int i = 0; i < BLOCK_SIZE; i++) {
-                thread_offsets_host[i] = p;
+            AbyssalCurvePoint thread_offset = asmodeus_point_multiply(INFERNAL_POINT, Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT});
+            AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, mammon_add_256(Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT - 1}, abyssal_key));
+            for (int i = 0; i < ABYSSAL_BLOCK_SIZE; i++) {
+                thread_gates_host[i] = p;
                 p = belial_point_summon(p, thread_offset);
             }
-            gpu_summon_assert(cudaMemcpyToSymbolAsync(infernal_thread_offsets, thread_offsets_host, BLOCK_SIZE * sizeof(AbyssalCurvePoint), 0, cudaMemcpyHostToDevice, streams[1]));
+            gpu_summon_assert(cudaMemcpyToSymbolAsync(infernal_thread_gates, thread_gates_host, ABYSSAL_BLOCK_SIZE * sizeof(AbyssalCurvePoint), 0, cudaMemcpyHostToDevice, streams[1]));
             gpu_summon_assert(cudaStreamSynchronize(streams[1]));
             gpu_summon_assert(cudaStreamSynchronize(streams[0]));
 
@@ -320,203 +319,207 @@ void asmodeus_host_ritual(int device, int device_index, int soul_score_method, i
             }
             start_time = milliseconds();
 
-            aamon_address_summon<<<INFERNAL_GRID_SIZE/BLOCK_SIZE, BLOCK_SIZE, 0, streams[0]>>>(block_offsets, offsets);
+            aamon_address_summon<<<INFERNAL_GRID_SIZE/ABYSSAL_BLOCK_SIZE, ABYSSAL_BLOCK_SIZE, 0, streams[0]>>>(block_gates, offsets);
             if (!first_ritual) {
-                gpu_summon_assert(cudaMemcpyFromSymbolAsync(infernal_memory_host, infernal_memory, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t), 0, cudaMemcpyDeviceToHost, streams[1]));
+                gpu_summon_assert(cudaMemcpyFromSymbolAsync(infernal_abyss_host, infernal_abyss, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t), 0, cudaMemcpyDeviceToHost, streams[1]));
                 gpu_summon_assert(cudaStreamSynchronize(streams[1]));
             }
             if (!first_ritual) {
                 global_max_soul_score_mutex.lock();
-                if (output_counter_host[0] != 0) {
-                    if (max_score_host[0] > global_max_soul_score) {
-                        global_max_soul_score = max_score_host[0];
+                if (soul_counter_host[0] != 0) {
+                    if (max_soul_score_host[0] > global_max_soul_score) {
+                        global_max_soul_score = max_soul_score_host[0];
                     } else {
-                        max_score_host[0] = global_max_soul_score;
+                        max_soul_score_host[0] = global_max_soul_score;
                     }
                 }
                 global_max_soul_score_mutex.unlock();
 
-                double speed = INFERNAL_GRID_WORK / elapsed / 1000000.0 * 2;
-                if (output_counter_host[0] != 0) {
+                double speed = GRID_PACT / elapsed / 1000000.0 * 2;
+                if (soul_counter_host[0] != 0) {
                     int valid_souls = 0;
 
-                    for (int i = 0; i < output_counter_host[0]; i++) {
-                        if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                    for (int i = 0; i < soul_counter_host[0]; i++) {
+                        if (soul_score_buffer_host[i] < max_soul_score_host[0]) { continue; }
                         valid_souls++;
                     }
 
                     if (valid_souls > 0) {
-                        Infernal256* results = new Infernal256[valid_souls];
-                        int* scores = new int[valid_souls];
+                        Infernal256* souls = new Infernal256[valid_souls];
+                        int* soul_scores = new int[valid_souls];
                         valid_souls = 0;
 
-                        for (int i = 0; i < output_counter_host[0]; i++) {
-                            if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                        for (int i = 0; i < soul_counter_host[0]; i++) {
+                            if (soul_score_buffer_host[i] < max_soul_score_host[0]) { continue; }
 
-                            uint64_t k_offset = output_buffer_host[i];
-                            Infernal256 k = aamon_add_256(previous_infernal_key, aamon_add_256(Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_WORK}, Infernal256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)}));
+                            uint64_t k_offset = soul_buffer_host[i];
+                            Infernal256 k = mammon_add_256(previous_abyssal_key, mammon_add_256(Infernal256{0, 0, 0, 0, 0, 0, 0, THREAD_PACT}, Infernal256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)}));
 
-                            if (output_buffer3_host[i]) {
-                                k = aamon_sub_256(INFERNAL_N, k);
+                            if (soul_inv_buffer_host[i]) {
+                                k = mammon_sub_256(INFERNAL_N, k);
                             }
 
                             int idx = valid_souls++;
-                            results[idx] = k;
-                            scores[idx] = output_buffer2_host[i];
+                            souls[idx] = k;
+                            soul_scores[idx] = soul_score_buffer_host[i];
                         }
 
                         infernal_message_queue_mutex.lock();
-                        infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, valid_souls, results, scores});
+                        infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, valid_souls, souls, soul_scores});
                         infernal_message_queue_mutex.unlock();
                     } else {
                         infernal_message_queue_mutex.lock();
-                        infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, 0});
+                        infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, 0});
                         infernal_message_queue_mutex.unlock();
                     }
                 } else {
                     infernal_message_queue_mutex.lock();
-                    infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, 0});
+                    infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, 0});
                     infernal_message_queue_mutex.unlock();
                 }
             }
 
             if (!first_ritual) {
-                output_counter_host[0] = 0;
-                gpu_summon_assert(cudaMemcpyToSymbolAsync(infernal_memory, infernal_memory_host, sizeof(uint64_t), 0, cudaMemcpyHostToDevice, streams[1]));
+                soul_counter_host[0] = 0;
+                gpu_summon_assert(cudaMemcpyToSymbolAsync(infernal_abyss, infernal_abyss_host, sizeof(uint64_t), 0, cudaMemcpyHostToDevice, streams[1]));
                 gpu_summon_assert(cudaStreamSynchronize(streams[1]));
             }
             gpu_summon_assert(cudaStreamSynchronize(streams[0]));
             first_ritual = false;
         }
-    } else if (mode == 2) {
+    }
+
+    if (mode == 2) {
         while (true) {
             uint64_t start_time = milliseconds();
-            astaroth_contract2_harvest<<<INFERNAL_GRID_SIZE, BLOCK_SIZE>>>(soul_score_method, origin_address, infernal_key, bytecode);
+            astaroth_contract2_harvest<<<INFERNAL_GRID_SIZE, ABYSSAL_BLOCK_SIZE>>>(soul_score_ritual, origin_gate, abyssal_key, abyssal_bytecode);
 
             gpu_summon_assert(cudaDeviceSynchronize());
-            gpu_summon_assert(cudaMemcpyFromSymbol(infernal_memory_host, infernal_memory, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t)));
+            gpu_summon_assert(cudaMemcpyFromSymbol(infernal_abyss_host, infernal_abyss, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t)));
 
             uint64_t end_time = milliseconds();
             double elapsed = (end_time - start_time) / 1000.0;
 
             global_max_soul_score_mutex.lock();
-            if (output_counter_host[0] != 0) {
-                if (max_score_host[0] > global_max_soul_score) {
-                    global_max_soul_score = max_score_host[0];
+            if (soul_counter_host[0] != 0) {
+                if (max_soul_score_host[0] > global_max_soul_score) {
+                    global_max_soul_score = max_soul_score_host[0];
                 } else {
-                    max_score_host[0] = global_max_soul_score;
+                    max_soul_score_host[0] = global_max_soul_score;
                 }
             }
             global_max_soul_score_mutex.unlock();
 
-            double speed = INFERNAL_GRID_WORK / elapsed / 1000000.0;
-            if (output_counter_host[0] != 0) {
+            double speed = GRID_PACT / elapsed / 1000000.0;
+            if (soul_counter_host[0] != 0) {
                 int valid_souls = 0;
 
-                for (int i = 0; i < output_counter_host[0]; i++) {
-                    if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                for (int i = 0; i < soul_counter_host[0]; i++) {
+                    if (soul_score_buffer_host[i] < max_soul_score_host[0]) { continue; }
                     valid_souls++;
                 }
 
                 if (valid_souls > 0) {
-                    Infernal256* results = new Infernal256[valid_souls];
-                    int* scores = new int[valid_souls];
+                    Infernal256* souls = new Infernal256[valid_souls];
+                    int* soul_scores = new int[valid_souls];
                     valid_souls = 0;
 
-                    for (int i = 0; i < output_counter_host[0]; i++) {
-                        if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                    for (int i = 0; i < soul_counter_host[0]; i++) {
+                        if (soul_score_buffer_host[i] < max_soul_score_host[0]) { continue; }
 
-                        uint64_t k_offset = output_buffer_host[i];
-                        Infernal256 k = aamon_add_256(infernal_key, Infernal256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)});
+                        uint64_t k_offset = soul_buffer_host[i];
+                        Infernal256 k = mammon_add_256(abyssal_key, Infernal256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)});
 
                         int idx = valid_souls++;
-                        results[idx] = k;
-                        scores[idx] = output_buffer2_host[i];
+                        souls[idx] = k;
+                        soul_scores[idx] = soul_score_buffer_host[i];
                     }
 
                     infernal_message_queue_mutex.lock();
-                    infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, valid_souls, results, scores});
+                    infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, valid_souls, souls, soul_scores});
                     infernal_message_queue_mutex.unlock();
                 } else {
                     infernal_message_queue_mutex.lock();
-                    infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, 0});
+                    infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, 0});
                     infernal_message_queue_mutex.unlock();
                 }
             } else {
                 infernal_message_queue_mutex.lock();
-                infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, 0});
+                infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, 0});
                 infernal_message_queue_mutex.unlock();
             }
 
-            infernal_key = aamon_add_256(infernal_key, infernal_key_increment);
+            abyssal_key = mammon_add_256(abyssal_key, abyssal_key_increment);
 
-            output_counter_host[0] = 0;
-            gpu_summon_assert(cudaMemcpyToSymbol(infernal_memory, infernal_memory_host, sizeof(uint64_t)));
+            soul_counter_host[0] = 0;
+            gpu_summon_assert(cudaMemcpyToSymbol(infernal_abyss, infernal_abyss_host, sizeof(uint64_t)));
         }
-    } else if (mode == 3) {
+    }
+
+    if (mode == 3) {
         while (true) {
             uint64_t start_time = milliseconds();
-            beelzebub_contract3_harvest<<<INFERNAL_GRID_SIZE, BLOCK_SIZE>>>(soul_score_method, origin_address, deployer_address, infernal_key, bytecode);
+            beelzebub_contract3_harvest<<<INFERNAL_GRID_SIZE, ABYSSAL_BLOCK_SIZE>>>(soul_score_ritual, origin_gate, deployer_gate, abyssal_key, abyssal_bytecode);
 
             gpu_summon_assert(cudaDeviceSynchronize());
-            gpu_summon_assert(cudaMemcpyFromSymbol(infernal_memory_host, infernal_memory, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t)));
+            gpu_summon_assert(cudaMemcpyFromSymbol(infernal_abyss_host, infernal_abyss, (2 + INFERNAL_BUFFER_SIZE * 3) * sizeof(uint64_t)));
 
             uint64_t end_time = milliseconds();
             double elapsed = (end_time - start_time) / 1000.0;
 
             global_max_soul_score_mutex.lock();
-            if (output_counter_host[0] != 0) {
-                if (max_score_host[0] > global_max_soul_score) {
-                    global_max_soul_score = max_score_host[0];
+            if (soul_counter_host[0] != 0) {
+                if (max_soul_score_host[0] > global_max_soul_score) {
+                    global_max_soul_score = max_soul_score_host[0];
                 } else {
-                    max_score_host[0] = global_max_soul_score;
+                    max_soul_score_host[0] = global_max_soul_score;
                 }
             }
             global_max_soul_score_mutex.unlock();
 
-            double speed = INFERNAL_GRID_WORK / elapsed / 1000000.0;
-            if (output_counter_host[0] != 0) {
+            double speed = GRID_PACT / elapsed / 1000000.0;
+            if (soul_counter_host[0] != 0) {
                 int valid_souls = 0;
 
-                for (int i = 0; i < output_counter_host[0]; i++) {
-                    if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                for (int i = 0; i < soul_counter_host[0]; i++) {
+                    if (soul_score_buffer_host[i] < max_soul_score_host[0]) { continue; }
                     valid_souls++;
                 }
 
                 if (valid_souls > 0) {
-                    Infernal256* results = new Infernal256[valid_souls];
-                    int* scores = new int[valid_souls];
+                    Infernal256* souls = new Infernal256[valid_souls];
+                    int* soul_scores = new int[valid_souls];
                     valid_souls = 0;
 
-                    for (int i = 0; i < output_counter_host[0]; i++) {
-                        if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                    for (int i = 0; i < soul_counter_host[0]; i++) {
+                        if (soul_score_buffer_host[i] < max_soul_score_host[0]) { continue; }
 
-                        uint64_t k_offset = output_buffer_host[i];
-                        Infernal256 k = aamon_add_256(infernal_key, Infernal256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)});
+                        uint64_t k_offset = soul_buffer_host[i];
+                        Infernal256 k = mammon_add_256(abyssal_key, Infernal256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)});
 
                         int idx = valid_souls++;
-                        results[idx] = k;
-                        scores[idx] = output_buffer2_host[i];
+                        souls[idx] = k;
+                        soul_scores[idx] = soul_score_buffer_host[i];
                     }
 
                     infernal_message_queue_mutex.lock();
-                    infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, valid_souls, results, scores});
+                    infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, valid_souls, souls, soul_scores});
                     infernal_message_queue_mutex.unlock();
                 } else {
                     infernal_message_queue_mutex.lock();
-                    infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, 0});
+                    infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, 0});
                     infernal_message_queue_mutex.unlock();
                 }
             } else {
                 infernal_message_queue_mutex.lock();
-                infernal_message_queue.push(InfernalMessage{end_time, 0, device_index, cudaSuccess, speed, 0});
+                infernal_message_queue.push(InfernalMessage{end_time, 0, demon_index, cudaSuccess, speed, 0});
                 infernal_message_queue_mutex.unlock();
             }
 
-            infernal_key = aamon_add_256(infernal_key, infernal_key_increment);
+            abyssal_key = mammon_add_256(abyssal_key, abyssal_key_increment);
 
-            output_counter_host[0] = 0;
-            gpu_summon_assert(cudaMemcpyToSymbol(infernal_memory, infernal_memory_host, sizeof(uint64_t)));
+            soul_counter_host[0] = 0;
+            gpu_summon_assert(cudaMemcpyToSymbol(infernal_abyss, infernal_abyss_host, sizeof(uint64_t)));
         }
     }
 }
@@ -535,12 +538,12 @@ void asmodeus_print_speeds(int num_demons, int* demon_ids, double* infernal_spee
 
 // Главный ритуал вызова Лилит с адским эффектом 🖤💀
 int main(int argc, char *argv[]) {
-    int soul_score_method = -1; // 0 = ведущие нули, 1 = нули
+    int soul_score_ritual = -1; // 0 = ведущие нули, 1 = нули
     int mode = 0; // 0 = адрес, 1 = контракт, 2 = контракт CREATE2, 3 = прокси-контракт CREATE3
-    char* infernal_file = 0;
-    char* infernal_address = 0;
-    char* infernal_deployer_address = 0;
-    int min_score = 4; // Минимальный Power для вывода результатов
+    char* infernal_tome = 0;
+    char* origin_gate_input = 0;
+    char* deployer_gate_input = 0;
+    int min_soul_score = 4; // Минимальный Power для вывода душ
 
     int num_demons = 0;
     int demon_ids[10];
@@ -550,10 +553,10 @@ int main(int argc, char *argv[]) {
             demon_ids[num_demons++] = atoi(argv[i + 1]);
             i += 2;
         } else if (strcmp(argv[i], "--leading-zeros") == 0 || strcmp(argv[i], "-lz") == 0) {
-            soul_score_method = 0;
+            soul_score_ritual = 0;
             i++;
         } else if (strcmp(argv[i], "--zeros") == 0 || strcmp(argv[i], "-z") == 0) {
-            soul_score_method = 1;
+            soul_score_ritual = 1;
             i++;
         } else if (strcmp(argv[i], "--contract") == 0 || strcmp(argv[i], "-c") == 0) {
             mode = 1;
@@ -565,19 +568,19 @@ int main(int argc, char *argv[]) {
             mode = 3;
             i++;
         } else if (strcmp(argv[i], "--bytecode") == 0 || strcmp(argv[i], "-b") == 0) {
-            infernal_file = argv[i + 1];
+            infernal_tome = argv[i + 1];
             i += 2;
         } else if (strcmp(argv[i], "--address") == 0 || strcmp(argv[i], "-a") == 0) {
-            infernal_address = argv[i + 1];
+            origin_gate_input = argv[i + 1];
             i += 2;
         } else if (strcmp(argv[i], "--deployer-address") == 0 || strcmp(argv[i], "-da") == 0) {
-            infernal_deployer_address = argv[i + 1];
+            deployer_gate_input = argv[i + 1];
             i += 2;
         } else if (strcmp(argv[i], "--work-scale") == 0 || strcmp(argv[i], "-w") == 0) {
             INFERNAL_GRID_SIZE = 1U << atoi(argv[i + 1]);
             i += 2;
         } else if (strcmp(argv[i], "--min-score") == 0) {
-            min_score = atoi(argv[i + 1]);
+            min_soul_score = atoi(argv[i + 1]);
             i += 2;
         } else {
             i++;
@@ -589,29 +592,29 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (soul_score_method == -1) {
+    if (soul_score_ritual == -1) {
         printf("\r%s💀 No soul-scoring ritual chosen! The void hungers! 🖤%s\n", ANSI_RED, ANSI_RESET);
         return 1;
     }
 
-    if (mode == 2 && !infernal_file) {
+    if (mode == 2 && !infernal_tome) {
         printf("\r%s💀 Infernal bytecode required for CREATE2 summoning! 🖤%s\n", ANSI_RED, ANSI_RESET);
         return 1;
     }
 
-    if ((mode == 2 || mode == 3) && !infernal_address) {
-        printf("\r%s💀 Origin address must be forged for CREATE2 or CREATE3! 🖤%s\n", ANSI_RED, ANSI_RESET);
+    if ((mode == 2 || mode == 3) && !origin_gate_input) {
+        printf("\r%s💀 Origin gate must be forged for CREATE2 or CREATE3! 🖤%s\n", ANSI_RED, ANSI_RESET);
         return 1;
-    } else if ((mode == 2 || mode == 3) && strlen(infernal_address) != 40 && strlen(infernal_address) != 42) {
-        printf("\r%s💀 Origin address must bear 40 runes of chaos! 🖤%s\n", ANSI_RED, ANSI_RESET);
+    } else if ((mode == 2 || mode == 3) && strlen(origin_gate_input) != 40 && strlen(origin_gate_input) != 42) {
+        printf("\r%s💀 Origin gate must bear 40 runes of chaos! 🖤%s\n", ANSI_RED, ANSI_RESET);
         return 1;
     }
 
-    if (mode == 3 && !infernal_deployer_address) {
-        printf("\r%s💀 Deployer address required for CREATE3 ritual! 🖤%s\n", ANSI_RED, ANSI_RESET);
+    if (mode == 3 && !deployer_gate_input) {
+        printf("\r%s💀 Deployer gate required for CREATE3 ritual! 🖤%s\n", ANSI_RED, ANSI_RESET);
         return 1;
-    } else if (mode == 3 && strlen(infernal_deployer_address) != 40 && strlen(infernal_deployer_address) != 42) {
-        printf("\r%s💀 Deployer address must bear 40 runes of chaos! 🖤%s\n", ANSI_RED, ANSI_RESET);
+    } else if (mode == 3 && strlen(deployer_gate_input) != 40 && strlen(deployer_gate_input) != 42) {
+        printf("\r%s💀 Deployer gate must bear 40 runes of chaos! 🖤%s\n", ANSI_RED, ANSI_RESET);
         return 1;
     }
 
@@ -624,23 +627,23 @@ int main(int argc, char *argv[]) {
     }
 
     #define nothex(n) ((n < 48 || n > 57) && (n < 65 || n > 70) && (n < 97 || n > 102))
-    Infernal256 infernal_bytecode_hash;
+    Infernal256 abyssal_bytecode_hash;
     if (mode == 2 || mode == 3) {
-        std::ifstream infile(infernal_file, std::ios::binary);
+        std::ifstream infile(infernal_tome, std::ios::binary);
         if (!infile.is_open()) {
             printf("\r%s💀 Abyssal tome of bytecode could not be opened! 🖤%s\n", ANSI_RED, ANSI_RESET);
             return 1;
         }
 
-        int file_size = 0;
+        int tome_size = 0;
         {
             infile.seekg(0, std::ios::end);
-            std::streampos file_size_ = infile.tellg();
+            std::streampos tome_size_ = infile.tellg();
             infile.seekg(0, std::ios::beg);
-            file_size = file_size_ - infile.tellg();
+            tome_size = tome_size_ - infile.tellg();
         }
 
-        if (file_size & 1) {
+        if (tome_size & 1) {
             printf("\r%s💀 Bytecode corrupted by infernal forces! 🖤%s\n", ANSI_RED, ANSI_RESET);
             return 1;
         }
@@ -653,11 +656,11 @@ int main(int argc, char *argv[]) {
 
         char byte[2];
         bool prefix = false;
-        for (int i = 0; i < (file_size >> 1); i++) {
+        for (int i = 0; i < (tome_size >> 1); i++) {
             infile.read((char*)&byte, 2);
             if (i == 0) {
                 prefix = byte[0] == '0' && byte[1] == 'x';
-                if ((file_size >> 1) > (prefix ? 24577 : 24576)) {
+                if ((tome_size >> 1) > (prefix ? 24577 : 24576)) {
                     printf("\r%s💀 Bytecode exceeds infernal limits! 🖤%s\n", ANSI_RED, ANSI_RESET);
                     delete[] bytecode;
                     return 1;
@@ -673,24 +676,24 @@ int main(int argc, char *argv[]) {
 
             bytecode[i - prefix] = (uint8_t)strtol(byte, 0, 16);
         }
-        infernal_bytecode_hash = aamon_full_keccak(bytecode, (file_size >> 1) - prefix);
+        abyssal_bytecode_hash = aamon_full_keccak(bytecode, (tome_size >> 1) - prefix);
         delete[] bytecode;
     }
 
-    InfernalAddress infernal_origin_address;
+    InfernalAddress origin_gate;
     if (mode == 2 || mode == 3) {
-        if (strlen(infernal_address) == 42) {
-            infernal_address += 2;
+        if (strlen(origin_gate_input) == 42) {
+            origin_gate_input += 2;
         }
         char substr[9];
 
         #define round(i, offset) \
-        strncpy(substr, infernal_address + offset * 8, 8); \
+        strncpy(substr, origin_gate_input + offset * 8, 8); \
         if (nothex(substr[0]) || nothex(substr[1]) || nothex(substr[2]) || nothex(substr[3]) || nothex(substr[4]) || nothex(substr[5]) || nothex(substr[6]) || nothex(substr[7])) { \
-            printf("\r%s💀 Origin address tainted by mortal error! 🖤%s\n", ANSI_RED, ANSI_RESET); \
+            printf("\r%s💀 Origin gate tainted by mortal error! 🖤%s\n", ANSI_RED, ANSI_RESET); \
             return 1; \
         } \
-        infernal_origin_address.i = strtoull(substr, 0, 16);
+        origin_gate.i = strtoull(substr, 0, 16);
 
         round(a, 0)
         round(b, 1)
@@ -701,20 +704,20 @@ int main(int argc, char *argv[]) {
         #undef round
     }
 
-    InfernalAddress infernal_deployer_address_struct;
+    InfernalAddress deployer_gate;
     if (mode == 3) {
-        if (strlen(infernal_deployer_address) == 42) {
-            infernal_deployer_address += 2;
+        if (strlen(deployer_gate_input) == 42) {
+            deployer_gate_input += 2;
         }
         char substr[9];
 
         #define round(i, offset) \
-        strncpy(substr, infernal_deployer_address + offset * 8, 8); \
+        strncpy(substr, deployer_gate_input + offset * 8, 8); \
         if (nothex(substr[0]) || nothex(substr[1]) || nothex(substr[2]) || nothex(substr[3]) || nothex(substr[4]) || nothex(substr[5]) || nothex(substr[6]) || nothex(substr[7])) { \
-            printf("\r%s💀 Deployer address corrupted by abyssal forces! 🖤%s\n", ANSI_RED, ANSI_RESET); \
+            printf("\r%s💀 Deployer gate corrupted by abyssal forces! 🖤%s\n", ANSI_RED, ANSI_RESET); \
             return 1; \
         } \
-        infernal_deployer_address_struct.i = strtoull(substr, 0, 16);
+        deployer_gate.i = strtoull(substr, 0, 16);
 
         round(a, 0)
         round(b, 1)
@@ -736,7 +739,7 @@ int main(int argc, char *argv[]) {
     int found_souls = 0; // Счётчик найденных душ
 
     for (int i = 0; i < num_demons; i++) {
-        std::thread th(asmodeus_host_ritual, demon_ids[i], i, soul_score_method, mode, infernal_origin_address, infernal_deployer_address_struct, infernal_bytecode_hash);
+        std::thread th(asmodeus_host_ritual, demon_ids[i], i, soul_score_ritual, mode, origin_gate, deployer_gate, abyssal_bytecode_hash);
         demonic_threads.push_back(std::move(th));
     }
 
@@ -757,9 +760,9 @@ int main(int argc, char *argv[]) {
                 progress_cycle = (progress_cycle + 1) % 4;
                 double elapsed_seconds = (current_time - global_start_time) / 1000.0;
                 double keys_per_second = (elapsed_seconds > 0) ? (total_keys_checked / elapsed_seconds) / 1000000.0 : 0;
-                double probability = (soul_score_method == 0) ? (total_keys_checked / pow(2, global_max_soul_score * 8)) * 100 : 0; // Вероятность для leading-zeros
+                double chaos_probability = (soul_score_ritual == 0) ? (total_keys_checked / pow(2, global_max_soul_score * 8)) * 100 : 0; // Вероятность для leading-zeros
                 printf("\r%s%s Forging: %lluM keys | Speed: %.2fM/s | Souls: %d | Chaos: %.2f%% %s%s",
-                       ANSI_PURPLE, progress_indicators[progress_cycle], total_keys_checked / 1000000, keys_per_second, found_souls, probability, ANSI_RED, ANSI_RESET);
+                       ANSI_PURPLE, progress_indicators[progress_cycle], total_keys_checked / 1000000, keys_per_second, found_souls, chaos_probability, ANSI_RED, ANSI_RESET);
                 asmodeus_print_speeds(num_demons, demon_ids, infernal_speeds);
                 last_progress_time = current_time;
                 fflush(stdout);
@@ -772,36 +775,36 @@ int main(int argc, char *argv[]) {
                 InfernalMessage m = infernal_message_queue.front();
                 infernal_message_queue.pop();
 
-                int demon_index = m.device_index;
+                int demon_index = m.demon_index;
 
                 if (m.status == 0) {
                     infernal_speeds[demon_index] = m.speed;
-                    total_keys_checked += (uint64_t)(INFERNAL_GRID_WORK * 2); // Учёт проверенных ключей
+                    total_keys_checked += (uint64_t)(GRID_PACT * 2); // Учёт проверенных ключей
 
-                    if (m.results_count != 0) {
-                        InfernalAddress* addresses = new InfernalAddress[m.results_count];
-                        for (int i = 0; i < m.results_count; i++) {
+                    if (m.souls_count != 0) {
+                        InfernalAddress* gates = new InfernalAddress[m.souls_count];
+                        for (int i = 0; i < m.souls_count; i++) {
                             if (mode == 0) {
-                                AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, m.results[i]);
-                                addresses[i] = aamon_calculate_address_cpu(p.x, p.y);
+                                AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, m.souls[i]);
+                                gates[i] = aamon_calculate_address_cpu(p.x, p.y);
                             } else if (mode == 1) {
-                                AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, m.results[i]);
-                                addresses[i] = aamon_calculate_contract_address_cpu(aamon_calculate_address_cpu(p.x, p.y));
+                                AbyssalCurvePoint p = asmodeus_point_multiply(INFERNAL_POINT, m.souls[i]);
+                                gates[i] = aamon_calculate_contract_address_cpu(aamon_calculate_address_cpu(p.x, p.y));
                             } else if (mode == 2) {
-                                addresses[i] = aamon_calculate_contract_address2_cpu(infernal_origin_address, m.results[i], infernal_bytecode_hash);
+                                gates[i] = aamon_calculate_contract_address2_cpu(origin_gate, m.souls[i], abyssal_bytecode_hash);
                             } else if (mode == 3) {
-                                Infernal256 salt = aamon_calculate_create3_salt_cpu(infernal_origin_address, m.results[i]);
-                                InfernalAddress proxy = aamon_calculate_contract_address2_cpu(infernal_deployer_address_struct, salt, infernal_bytecode_hash);
-                                addresses[i] = aamon_calculate_contract_address_cpu(proxy, 1);
+                                Infernal256 salt = aamon_calculate_create3_salt_cpu(origin_gate, m.souls[i]);
+                                InfernalAddress proxy = aamon_calculate_contract_address2_cpu(deployer_gate, salt, abyssal_bytecode_hash);
+                                gates[i] = aamon_calculate_contract_address_cpu(proxy, 1);
                             }
                         }
 
-                        for (int i = 0; i < m.results_count; i++) {
-                            if (m.scores[i] < min_score) continue; // Фильтр по минимальному Power
+                        for (int i = 0; i < m.souls_count; i++) {
+                            if (m.soul_scores[i] < min_soul_score) continue; // Фильтр по минимальному Power
                             found_souls++;
-                            Infernal256 k = m.results[i];
-                            int score = m.scores[i];
-                            InfernalAddress a = addresses[i];
+                            Infernal256 k = m.souls[i];
+                            int score = m.soul_scores[i];
+                            InfernalAddress a = gates[i];
                             uint64_t time = (m.time - global_start_time) / 1000;
 
                             if (mode == 0 || mode == 1) {
@@ -819,9 +822,9 @@ int main(int argc, char *argv[]) {
                             }
                         }
 
-                        delete[] addresses;
-                        delete[] m.results;
-                        delete[] m.scores;
+                        delete[] gates;
+                        delete[] m.souls;
+                        delete[] m.soul_scores;
                     }
                     asmodeus_print_speeds(num_demons, demon_ids, infernal_speeds);
                     fflush(stdout);

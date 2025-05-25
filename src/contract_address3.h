@@ -31,12 +31,12 @@
      ✠ SUMMONING THE CONTRACTS OF THE ABYSSAL DAMNED ✠
 */
 
-// Ритуал добычи контрактных адресов под взором Бельзебуба
-__global__ void __launch_bounds__(BLOCK_SIZE, 2) beelzebub_contract3_harvest(int soul_score, InfernalAddress origin, InfernalAddress deployer, Infernal256 base_key, Infernal256 proxy_bytecode) {
-    uint64_t soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)BLOCK_SIZE;
-    uint64_t key_offset = (uint64_t)THREAD_WORK * soul_id;
+// Ритуал добычи контрактных адресов через CREATE3 под взором Бельзебуба
+__global__ void __launch_bounds__(ABYSSAL_BLOCK_SIZE, 2) beelzebub_contract3_harvest(int soul_score_ritual, InfernalAddress origin_gate, InfernalAddress deployer_gate, Infernal256 base_abyssal_key, Infernal256 abyssal_proxy_bytecode) {
+    uint64_t infernal_soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)ABYSSAL_BLOCK_SIZE;
+    uint64_t abyssal_key_offset = (uint64_t)THREAD_PACT * infernal_soul_id;
 
-    Infernal256 key = base_key;
+    Infernal256 abyssal_key = base_abyssal_key;
     asm(
         "add.cc.u32 %0, %0, %8;     \n\t"
         "addc.cc.u32 %1, %1, %9;    \n\t"
@@ -46,14 +46,14 @@ __global__ void __launch_bounds__(BLOCK_SIZE, 2) beelzebub_contract3_harvest(int
         "addc.cc.u32 %5, %5, 0x0;   \n\t"
         "addc.cc.u32 %6, %6, 0x0;   \n\t"
         "addc.u32 %7, %7, 0x0;      \n\t"
-        : "+r"(key.h), "+r"(key.g), "+r"(key.f), "+r"(key.e), "+r"(key.d), "+r"(key.c), "+r"(key.b), "+r"(key.a)
-        : "r"((uint32_t)(key_offset & 0xFFFFFFFF)), "r"((uint32_t)(key_offset >> 32))
+        : "+r"(abyssal_key.h), "+r"(abyssal_key.g), "+r"(abyssal_key.f), "+r"(abyssal_key.e), "+r"(abyssal_key.d), "+r"(abyssal_key.c), "+r"(abyssal_key.b), "+r"(abyssal_key.a)
+        : "r"((uint32_t)(abyssal_key_offset & 0xFFFFFFFF)), "r"((uint32_t)(abyssal_key_offset >> 32))
     );
 
-    for (int i = 0; i < THREAD_WORK; i++) {
-        Infernal256 salt = aamon_calculate_create3_salt(origin, key);
-        InfernalAddress proxy = aamon_calculate_contract_address2(deployer, salt, proxy_bytecode);
-        belial_handle_output2(soul_score, aamon_calculate_contract_address(proxy, 1), key_offset + i);
-        key.h += 1;
+    for (int infernal_i = 0; infernal_i < THREAD_PACT; infernal_i++) {
+        Infernal256 abyssal_salt = aamon_calculate_create3_salt(origin_gate, abyssal_key);
+        InfernalAddress infernal_proxy = aamon_calculate_contract_address2(deployer_gate, abyssal_salt, abyssal_proxy_bytecode);
+        belial_handle_output2(soul_score_ritual, aamon_calculate_contract_address(infernal_proxy, 1), abyssal_key_offset + infernal_i);
+        abyssal_key.h += 1;
     }
 }

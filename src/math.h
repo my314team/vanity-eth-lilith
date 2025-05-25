@@ -32,10 +32,10 @@
 #define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
 
 // Ритуал сложения 256-битных чисел с переносом под взором Маммона
-__device__ Infernal256c mammon_add_256_with_c(Infernal256 x, Infernal256 y) {
-    Infernal256c result;
+__device__ Infernal256c mammon_add_256_with_c(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256c abyssal_result;
 
-    uint32_t carry = 0;
+    uint32_t infernal_carry = 0;
     asm(
         "add.cc.u32 %0, %9, %17;    \n\t"
         "addc.cc.u32 %1, %10, %18;  \n\t"
@@ -46,18 +46,18 @@ __device__ Infernal256c mammon_add_256_with_c(Infernal256 x, Infernal256 y) {
         "addc.cc.u32 %6, %15, %23;  \n\t"
         "addc.cc.u32 %7, %16, %24;  \n\t"
         "addc.u32 %8, 0x0, 0x0;     \n\t"
-        : "=r"(result.h), "=r"(result.g), "=r"(result.f), "=r"(result.e), "=r"(result.d), "=r"(result.c), "=r"(result.b), "=r"(result.a), "=r"(carry)
-        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+        : "=r"(abyssal_result.h), "=r"(abyssal_result.g), "=r"(abyssal_result.f), "=r"(abyssal_result.e), "=r"(abyssal_result.d), "=r"(abyssal_result.c), "=r"(abyssal_result.b), "=r"(abyssal_result.a), "=r"(infernal_carry)
+        : "r"(infernal_x.h), "r"(infernal_x.g), "r"(infernal_x.f), "r"(infernal_x.e), "r"(infernal_x.d), "r"(infernal_x.c), "r"(infernal_x.b), "r"(infernal_x.a), "r"(infernal_y.h), "r"(infernal_y.g), "r"(infernal_y.f), "r"(infernal_y.e), "r"(infernal_y.d), "r"(infernal_y.c), "r"(infernal_y.b), "r"(infernal_y.a)
     );
 
-    result.carry = (bool)carry;
+    abyssal_result.carry = (bool)infernal_carry;
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал вычитания 256-битных чисел
-__device__ Infernal256 mammon_sub_256(Infernal256 x, Infernal256 y) {
-    Infernal256 result;
+// Ритуал вычитания 256-битных чисел под взором Маммона
+__device__ Infernal256 mammon_sub_256(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256 abyssal_result;
 
     asm(
         "sub.cc.u32 %0, %8, %16;    \n\t"
@@ -68,16 +68,16 @@ __device__ Infernal256 mammon_sub_256(Infernal256 x, Infernal256 y) {
         "subc.cc.u32 %5, %13, %21;  \n\t"
         "subc.cc.u32 %6, %14, %22;  \n\t"
         "subc.u32 %7, %15, %23;     \n\t"
-        : "=r"(result.h), "=r"(result.g), "=r"(result.f), "=r"(result.e), "=r"(result.d), "=r"(result.c), "=r"(result.b), "=r"(result.a)
-        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+        : "=r"(abyssal_result.h), "=r"(abyssal_result.g), "=r"(abyssal_result.f), "=r"(abyssal_result.e), "=r"(abyssal_result.d), "=r"(abyssal_result.c), "=r"(abyssal_result.b), "=r"(abyssal_result.a)
+        : "r"(infernal_x.h), "r"(infernal_x.g), "r"(infernal_x.f), "r"(infernal_x.e), "r"(infernal_x.d), "r"(infernal_x.c), "r"(infernal_x.b), "r"(infernal_x.a), "r"(infernal_y.h), "r"(infernal_y.g), "r"(infernal_y.f), "r"(infernal_y.e), "r"(infernal_y.d), "r"(infernal_y.c), "r"(infernal_y.b), "r"(infernal_y.a)
     );
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал вычитания 256-битных чисел по модулю P
-__device__ Infernal256 mammon_sub_256_mod_p(Infernal256 x, Infernal256 y) {
-    Infernal256 result;
+// Ритуал вычитания 256-битных чисел по модулю P под взором Маммона
+__device__ Infernal256 mammon_sub_256_mod_p(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256 abyssal_result;
 
     asm(
         "{\n\t"
@@ -102,17 +102,17 @@ __device__ Infernal256 mammon_sub_256_mod_p(Infernal256 x, Infernal256 y) {
         "@p addc.cc.u32 %6, %6, 0xFFFFFFFF; \n\t"
         "@p addc.u32 %7, %7, 0xFFFFFFFF;    \n\t"
         "}"
-        : "=r"(result.h), "=r"(result.g), "=r"(result.f), "=r"(result.e), "=r"(result.d), "=r"(result.c), "=r"(result.b), "=r"(result.a)
-        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+        : "=r"(abyssal_result.h), "=r"(abyssal_result.g), "=r"(abyssal_result.f), "=r"(abyssal_result.e), "=r"(abyssal_result.d), "=r"(abyssal_result.c), "=r"(abyssal_result.b), "=r"(abyssal_result.a)
+        : "r"(infernal_x.h), "r"(infernal_x.g), "r"(infernal_x.f), "r"(infernal_x.e), "r"(infernal_x.d), "r"(infernal_x.c), "r"(infernal_x.b), "r"(infernal_x.a), "r"(infernal_y.h), "r"(infernal_y.g), "r"(infernal_y.f), "r"(infernal_y.e), "r"(infernal_y.d), "r"(infernal_y.c), "r"(infernal_y.b), "r"(infernal_y.a)
     );
 
-    return result;
+    return abyssal_result;
 }
 
 // Ритуал умножения 256-битных чисел по модулю P под взором Астарота
-__device__ Infernal256 astaroth_mul_256_mod_p(Infernal256 x, Infernal256 y) {
-    Infernal256 r{0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t carry = 0;
+__device__ Infernal256 astaroth_mul_256_mod_p(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256 abyssal_result{0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t infernal_carry = 0;
 
     asm(
         "{\n\t"
@@ -333,98 +333,104 @@ __device__ Infernal256 astaroth_mul_256_mod_p(Infernal256 x, Infernal256 y) {
         "addc.cc.u32 %7, %7, 0x0;           \n\t"
         "addc.u32 %8, 0x0, 0x0;             \n\t"
         "}"
-        : "+r"(r.h), "+r"(r.g), "+r"(r.f), "+r"(r.e), "+r"(r.d), "+r"(r.c), "+r"(r.b), "+r"(r.a), "=r"(carry)
-        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+        : "+r"(abyssal_result.h), "+r"(abyssal_result.g), "+r"(abyssal_result.f), "+r"(abyssal_result.e), "+r"(abyssal_result.d), "+r"(abyssal_result.c), "+r"(abyssal_result.b), "+r"(abyssal_result.a), "=r"(infernal_carry)
+        : "r"(infernal_x.h), "r"(infernal_x.g), "r"(infernal_x.f), "r"(infernal_x.e), "r"(infernal_x.d), "r"(infernal_x.c), "r"(infernal_x.b), "r"(infernal_x.a), "r"(infernal_y.h), "r"(infernal_y.g), "r"(infernal_y.f), "r"(infernal_y.e), "r"(infernal_y.d), "r"(infernal_y.c), "r"(infernal_y.b), "r"(infernal_y.a)
     );
 
-    bool overflow = carry || belial_gte_infernal256(r, INFERNAL_P);
-    if (overflow) {
-        r = mammon_sub_256(r, INFERNAL_P);
+    bool infernal_overflow = infernal_carry || belial_gte_infernal256(abyssal_result, INFERNAL_P);
+    if (infernal_overflow) {
+        abyssal_result = mammon_sub_256(abyssal_result, INFERNAL_P);
     }
 
-    return r;
+    return abyssal_result;
 }
 
-// Ритуал сдвига вправо на 1 бит
-__device__ Infernal256 mammon_rshift1_256(Infernal256 x) {
-    Infernal256 result;
-    result.a =               (x.a >> 1);
-    result.b = (x.a << 31) | (x.b >> 1);
-    result.c = (x.b << 31) | (x.c >> 1);
-    result.d = (x.c << 31) | (x.d >> 1);
-    result.e = (x.d << 31) | (x.e >> 1);
-    result.f = (x.e << 31) | (x.f >> 1);
-    result.g = (x.f << 31) | (x.g >> 1);
-    result.h = (x.g << 31) | (x.h >> 1);
-    return result;
+// Ритуал сдвига вправо на 1 бит под взором Маммона
+__device__ Infernal256 mammon_rshift1_256(Infernal256 infernal_x) {
+    Infernal256 abyssal_result;
+    abyssal_result.a =               (infernal_x.a >> 1);
+    abyssal_result.b = (infernal_x.a << 31) | (infernal_x.b >> 1);
+    abyssal_result.c = (infernal_x.b << 31) | (infernal_x.c >> 1);
+    abyssal_result.d = (infernal_x.c << 31) | (infernal_x.d >> 1);
+    abyssal_result.e = (infernal_x.d << 31) | (infernal_x.e >> 1);
+    abyssal_result.f = (infernal_x.e << 31) | (infernal_x.f >> 1);
+    abyssal_result.g = (infernal_x.f << 31) | (infernal_x.g >> 1);
+    abyssal_result.h = (infernal_x.g << 31) | (infernal_x.h >> 1);
+    return abyssal_result;
 }
 
-// Ритуал сдвига вправо на 1 бит с переносом
-__device__ Infernal256 mammon_rshift1_256c(Infernal256c x) {
-    Infernal256 result;
-    result.a = ((uint32_t)x.carry << 31) | (x.a >> 1);
-    result.b = (x.a << 31) | (x.b >> 1);
-    result.c = (x.b << 31) | (x.c >> 1);
-    result.d = (x.c << 31) | (x.d >> 1);
-    result.e = (x.d << 31) | (x.e >> 1);
-    result.f = (x.e << 31) | (x.f >> 1);
-    result.g = (x.f << 31) | (x.g >> 1);
-    result.h = (x.g << 31) | (x.h >> 1);
-    return result;
+// Ритуал сдвига вправо на 1 бит с переносом под взором Маммона
+__device__ Infernal256 mammon_rshift1_256c(Infernal256c infernal_x) {
+    Infernal256 abyssal_result;
+    abyssal_result.a = ((uint32_t)infernal_x.carry << 31) | (infernal_x.a >> 1);
+    abyssal_result.b = (infernal_x.a << 31) | (infernal_x.b >> 1);
+    abyssal_result.c = (infernal_x.b << 31) | (infernal_x.c >> 1);
+    abyssal_result.d = (infernal_x.c << 31) | (infernal_x.d >> 1);
+    abyssal_result.e = (infernal_x.d << 31) | (infernal_x.e >> 1);
+    abyssal_result.f = (infernal_x.e << 31) | (infernal_x.f >> 1);
+    abyssal_result.g = (infernal_x.f << 31) | (infernal_x.g >> 1);
+    abyssal_result.h = (infernal_x.g << 31) | (infernal_x.h >> 1);
+    return abyssal_result;
 }
 
 // Ритуал вычисления обратного по модулю P под взором Астарота
-__device__ Infernal256 astaroth_eeuclid_256_mod_p(Infernal256 input) {
-    Infernal256 u = input;
-    Infernal256 v = INFERNAL_P;
-    Infernal256 x{0, 0, 0, 0, 0, 0, 0, 1};
-    Infernal256 y{0, 0, 0, 0, 0, 0, 0, 0};
+__device__ Infernal256 astaroth_eeuclid_256_mod_p(Infernal256 abyssal_input) {
+    Infernal256 abyssal_u = abyssal_input;
+    Infernal256 abyssal_v = INFERNAL_P;
+    Infernal256 abyssal_x{0, 0, 0, 0, 0, 0, 0, 1};
+    Infernal256 abyssal_y{0, 0, 0, 0, 0, 0, 0, 0};
 
-    while ((u.h & 1) == 0) {
-        u = mammon_rshift1_256(u);
+    while ((abyssal_u.h & 1) == 0) {
+        abyssal_u = mammon_rshift1_256(abyssal_u);
 
-        Infernal256c x_;
-        if ((x.h & 1) == 1) {
-            x_ = mammon_add_256_with_c(x, INFERNAL_P);
+        Infernal256c abyssal_x_;
+        if ((abyssal_x.h & 1) == 1) {
+            abyssal_x_ = mammon_add_256_with_c(abyssal_x, INFERNAL_P);
         } else {
-            x_ = aamon_infernal256_to_infernal256c(x);
+            abyssal_x_ = aamon_infernal256_to_infernal256c(abyssal_x);
         }
-        x = mammon_rshift1_256c(x_);
+        abyssal_x = mammon_rshift1_256c(abyssal_x_);
     }
 
-    while (belial_neq_infernal256(u, v)) {
-        if (belial_gt_infernal256(u, v)) {
-            u = mammon_sub_256(u, v);
-            x = mammon_sub_256_mod_p(x, y);
+    bool chaos_prmt = false;
+    while (true) {
+        bool infernal_gt = false;
+        bool abyssal_equal = true;
+        infernal_gt |= (abyssal_u.a > abyssal_v.a); abyssal_equal &= (abyssal_u.a == abyssal_v.a);
+        infernal_gt |= ((abyssal_u.b > abyssal_v.b) && abyssal_equal); abyssal_equal &= (abyssal_u.b == abyssal_v.b);
+        infernal_gt |= ((abyssal_u.c > abyssal_v.c) && abyssal_equal); abyssal_equal &= (abyssal_u.c == abyssal_v.c);
+        infernal_gt |= ((abyssal_u.d > abyssal_v.d) && abyssal_equal); abyssal_equal &= (abyssal_u.d == abyssal_v.d);
+        infernal_gt |= ((abyssal_u.e > abyssal_v.e) && abyssal_equal); abyssal_equal &= (abyssal_u.e == abyssal_v.e);
+        infernal_gt |= ((abyssal_u.f > abyssal_v.f) && abyssal_equal); abyssal_equal &= (abyssal_u.f == abyssal_v.f);
+        infernal_gt |= ((abyssal_u.g > abyssal_v.g) && abyssal_equal); abyssal_equal &= (abyssal_u.g == abyssal_v.g);
+        infernal_gt |= ((abyssal_u.h > abyssal_v.h) && abyssal_equal); abyssal_equal &= (abyssal_u.h == abyssal_v.h);
 
-            while ((u.h & 1) == 0) {
-                u = mammon_rshift1_256(u);
+        if (abyssal_equal) { break; }
+        if (infernal_gt) {
+            chaos_prmt = !chaos_prmt;
+            Infernal256 t = abyssal_u;
+            abyssal_u = abyssal_v;
+            abyssal_v = t;
+            t = abyssal_x;
+            abyssal_x = abyssal_y;
+            abyssal_y = t;
+        }
 
-                Infernal256c x_;
-                if ((x.h & 1) == 1) {
-                    x_ = mammon_add_256_with_c(x, INFERNAL_P);
-                } else {
-                    x_ = aamon_infernal256_to_infernal256c(x);
-                }
-                x = mammon_rshift1_256c(x_);
+        abyssal_v = mammon_sub_256(abyssal_v, abyssal_u);
+        abyssal_y = mammon_sub_256_mod_p(abyssal_y, abyssal_x);
+
+        while ((abyssal_v.h & 1) == 0) {
+            abyssal_v = mammon_rshift1_256(abyssal_v);
+
+            Infernal256c abyssal_y_;
+            if ((abyssal_y.h & 1) == 1) {
+                abyssal_y_ = mammon_add_256_with_c(abyssal_y, INFERNAL_P);
+            } else {
+                abyssal_y_ = aamon_infernal256_to_infernal256c(abyssal_y);
             }
-        } else {
-            v = mammon_sub_256(v, u);
-            y = mammon_sub_256_mod_p(y, x);
-
-            while ((v.h & 1) == 0) {
-                v = mammon_rshift1_256(v);
-
-                Infernal256c y_;
-                if ((y.h & 1) == 1) {
-                    y_ = mammon_add_256_with_c(y, INFERNAL_P);
-                } else {
-                    y_ = aamon_infernal256_to_infernal256c(y);
-                }
-                y = mammon_rshift1_256c(y_);
-            }
+            abyssal_y = mammon_rshift1_256c(abyssal_y_);
         }
     }
 
-    return x;
+    return chaos_prmt ? abyssal_y : abyssal_x;
 }

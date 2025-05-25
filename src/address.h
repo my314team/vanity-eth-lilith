@@ -22,91 +22,92 @@
 #include "constants.h"
 
 /*
-  ██████╗ ██╗████████╗██╗   ██╗ █████╗ ██╗
- ██╔═══██╗██║╚══██╔══╝██║   ██║██╔══██╗██║
- ██║   ██║██║   ██║   ██║   ██║███████║██║
- ██║   ██║██║   ██║   ██║   ██║██╔══██║██║
- ╚██████╔╝██║   ██║   ╚██████╔╝██║  ██║███████╗
-  ╚═════╝ ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝
-     ✠ SUMMONING THE ADDRESSES OF THE DAMNED ✠
+  ██████╗ ██████╗ ██████╗ ██████╗ ███████╗███████╗███████╗
+ ██╔════╝ ██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝██╔════╝
+ █████╗   ██████╔╝██████╔╝██████╔╝█████╗  ███████╗███████╗
+ ██╔══╝   ██╔═══╝ ██╔═══╝ ██╔═══╝ ██╔══╝  ╚════██║╚════██║
+ ██║      ██║     ██║     ██║     ███████╗███████║███████║
+ ╚═╝      ╚═╝     ╚═╝     ╚═╝     ╚══════╝╚══════╝╚══════╝
+     ✠ SUMMONING THE ADDRESSES OF THE ABYSSAL DAMNED ✠
 */
 
-// Ритуал инициализации точек для вызова адресов
-__global__ void __launch_bounds__(BLOCK_SIZE) aamon_address_summon(AbyssalCurvePoint* abyss_offsets, AbyssalCurvePoint* infernal_points) {
-    bool b = __isGlobal(abyss_offsets);
-    __builtin_assume(b);
-    bool b2 = __isGlobal(infernal_points);
-    __builtin_assume(b2);
+// Ритуал инициализации адресов под взором Аамона
+__global__ void __launch_bounds__(ABYSSAL_BLOCK_SIZE) aamon_address_summon(AbyssalCurvePoint* abyssal_block_offsets, AbyssalCurvePoint* abyssal_offsets) {
+    bool infernal_is_global = __isGlobal(abyssal_block_offsets);
+    __builtin_assume(infernal_is_global);
+    bool infernal_is_global2 = __isGlobal(abyssal_offsets);
+    __builtin_assume(infernal_is_global2);
 
-    uint64_t soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)BLOCK_SIZE;
+    uint64_t infernal_soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)ABYSSAL_BLOCK_SIZE;
 
-    Infernal256 z[BLOCK_SIZE];
-    z[0] = mammon_sub_256_mod_p(abyss_offsets[soul_id].x, abyss_offsets[0].x);
+    Infernal256 abyssal_z[ABYSSAL_BLOCK_SIZE];
+    abyssal_z[0] = mammon_sub_256_mod_p(abyssal_block_offsets[infernal_soul_id].infernal_x, infernal_thread_gates[0].infernal_x);
 
-    for (int i = 1; i < BLOCK_SIZE; i++) {
-        Infernal256 x_delta = mammon_sub_256_mod_p(abyss_offsets[soul_id].x, abyss_offsets[i].x);
-        z[i] = astaroth_mul_256_mod_p(z[i - 1], x_delta);
+    for (int infernal_i = 1; infernal_i < ABYSSAL_BLOCK_SIZE; infernal_i++) {
+        Infernal256 infernal_x_delta = mammon_sub_256_mod_p(abyssal_block_offsets[infernal_soul_id].infernal_x, infernal_thread_gates[infernal_i].infernal_x);
+        abyssal_z[infernal_i] = astaroth_mul_256_mod_p(abyssal_z[infernal_i - 1], infernal_x_delta);
     }
 
-    Infernal256 q = astaroth_eeuclid_256_mod_p(z[BLOCK_SIZE - 1]);
+    Infernal256 abyssal_q = astaroth_eeuclid_256_mod_p(abyssal_z[ABYSSAL_BLOCK_SIZE - 1]);
 
-    for (int i = BLOCK_SIZE - 1; i >= 1; i--) {
-        Infernal256 y = astaroth_mul_256_mod_p(q, z[i - 1]);
-        q = astaroth_mul_256_mod_p(q, mammon_sub_256_mod_p(abyss_offsets[soul_id].x, abyss_offsets[i].x));
+    for (int infernal_i = ABYSSAL_BLOCK_SIZE - 1; infernal_i >= 1; infernal_i--) {
+        Infernal256 infernal_y = astaroth_mul_256_mod_p(abyssal_q, abyssal_z[infernal_i - 1]);
+        abyssal_q = astaroth_mul_256_mod_p(abyssal_q, mammon_sub_256_mod_p(abyssal_block_offsets[infernal_soul_id].infernal_x, infernal_thread_gates[infernal_i].infernal_x));
 
-        Infernal256 lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(abyss_offsets[soul_id].y, abyss_offsets[i].y), y);
-        Infernal256 curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, lambda), abyss_offsets[soul_id].x), abyss_offsets[i].x);
-        Infernal256 curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, mammon_sub_256_mod_p(abyss_offsets[soul_id].x, curve_x)), abyss_offsets[soul_id].y);
-        infernal_points[soul_id * BLOCK_SIZE + i] = AbyssalCurvePoint{curve_x, curve_y};
+        Infernal256 abyssal_lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(abyssal_block_offsets[infernal_soul_id].infernal_y, infernal_thread_gates[infernal_i].infernal_y), infernal_y);
+        Infernal256 infernal_curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, abyssal_lambda), abyssal_block_offsets[infernal_soul_id].infernal_x), infernal_thread_gates[infernal_i].infernal_x);
+        Infernal256 infernal_curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, mammon_sub_256_mod_p(abyssal_block_offsets[infernal_soul_id].infernal_x, infernal_curve_x)), abyssal_block_offsets[infernal_soul_id].infernal_y);
+        abyssal_offsets[infernal_soul_id * ABYSSAL_BLOCK_SIZE + infernal_i] = AbyssalCurvePoint{infernal_curve_x, infernal_curve_y};
     }
 
-    Infernal256 y = q;
-    Infernal256 lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(abyss_offsets[soul_id].y, abyss_offsets[0].y), y);
-    Infernal256 curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, lambda), abyss_offsets[soul_id].x), abyss_offsets[0].x);
-    Infernal256 curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, mammon_sub_256_mod_p(abyss_offsets[soul_id].x, curve_x)), abyss_offsets[soul_id].y);
-    infernal_points[soul_id * BLOCK_SIZE] = AbyssalCurvePoint{curve_x, curve_y};
+    Infernal256 infernal_y = abyssal_q;
+    Infernal256 abyssal_lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(abyssal_block_offsets[infernal_soul_id].infernal_y, infernal_thread_gates[0].infernal_y), infernal_y);
+    Infernal256 infernal_curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, abyssal_lambda), abyssal_block_offsets[infernal_soul_id].infernal_x), infernal_thread_gates[0].infernal_x);
+    Infernal256 infernal_curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, mammon_sub_256_mod_p(abyssal_block_offsets[infernal_soul_id].infernal_x, infernal_curve_x)), abyssal_block_offsets[infernal_soul_id].infernal_y);
+    abyssal_offsets[infernal_soul_id * ABYSSAL_BLOCK_SIZE] = AbyssalCurvePoint{infernal_curve_x, infernal_curve_y};
 }
 
-// Ритуал обработки точек для добычи адресов под взором Лилит
-__global__ void __launch_bounds__(BLOCK_SIZE, 2) belial_address_harvest(int soul_score, AbyssalCurvePoint* infernal_points) {
-    bool b = __isGlobal(infernal_points);
-    __builtin_assume(b);
+// Ритуал добычи адресов под взором Асмодея
+__global__ void __launch_bounds__(ABYSSAL_BLOCK_SIZE, 2) asmodeus_address_harvest(int soul_score_ritual, AbyssalCurvePoint* abyssal_offsets) {
+    bool infernal_is_global = __isGlobal(abyssal_offsets);
+    __builtin_assume(infernal_is_global);
 
-    uint64_t soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)BLOCK_SIZE;
-    uint64_t key = (uint64_t)THREAD_WORK * soul_id;
+    uint64_t infernal_soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)ABYSSAL_BLOCK_SIZE;
+    uint64_t abyssal_key = (uint64_t)THREAD_PACT * infernal_soul_id;
 
-    AbyssalCurvePoint p = infernal_points[soul_id];
+    AbyssalCurvePoint infernal_point = abyssal_offsets[infernal_soul_id];
 
-    belial_handle_output(soul_score, aamon_calculate_address(p.x, p.y), key, 0);
-    belial_handle_output(soul_score, aamon_calculate_address(p.x, mammon_sub_256(INFERNAL_P, p.y)), key, 1);
+    belial_handle_output(soul_score_ritual, aamon_calculate_address(infernal_point.infernal_x, infernal_point.infernal_y), abyssal_key, 0);
+    belial_handle_output(soul_score_ritual, aamon_calculate_address(infernal_point.infernal_x, mammon_sub_256(INFERNAL_P, infernal_point.infernal_y)), abyssal_key, 1);
 
-    Infernal256 z[THREAD_WORK - 1];
-    z[0] = mammon_sub_256_mod_p(p.x, infernal_addends[0].x);
+    Infernal256 abyssal_z[THREAD_PACT - 1];
+    abyssal_z[0] = mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_addends[0].infernal_x);
 
-    for (int i = 1; i < THREAD_WORK - 1; i++) {
-        Infernal256 x_delta = mammon_sub_256_mod_p(p.x, infernal_addends[i].x);
-        z[i] = astaroth_mul_256_mod_p(z[i - 1], x_delta);
+    for (int infernal_i = 1; infernal_i < THREAD_PACT - 1; infernal_i++) {
+        Infernal256 infernal_x_delta = mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_addends[infernal_i].infernal_x);
+        abyssal_z[infernal_i] = astaroth_mul_256_mod_p(abyssal_z[infernal_i - 1], infernal_x_delta);
     }
 
-    Infernal256 q = astaroth_eeuclid_256_mod_p(z[THREAD_WORK - 2]);
+    Infernal256 abyssal_q = astaroth_eeuclid_256_mod_p(abyssal_z[THREAD_PACT - 2]);
 
-    for (int i = THREAD_WORK - 2; i >= 1; i--) {
-        Infernal256 y = astaroth_mul_256_mod_p(q, z[i - 1]);
-        q = astaroth_mul_256_mod_p(q, mammon_sub_256_mod_p(p.x, infernal_addends[i].x));
+    for (int infernal_i = THREAD_PACT - 2; infernal_i >= 1; infernal_i--) {
+        Infernal256 infernal_y = astaroth_mul_256_mod_p(abyssal_q, abyssal_z[infernal_i - 1]);
+        abyssal_q = astaroth_mul_256_mod_p(abyssal_q, mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_addends[infernal_i].infernal_x));
 
-        Infernal256 lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(p.y, infernal_addends[i].y), y);
-        Infernal256 curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, lambda), p.x), infernal_addends[i].x);
-        Infernal256 curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, mammon_sub_256_mod_p(p.x, curve_x)), p.y);
+        Infernal256 abyssal_lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(infernal_point.infernal_y, infernal_addends[infernal_i].infernal_y), infernal_y);
+        Infernal256 infernal_curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, abyssal_lambda), infernal_point.infernal_x), infernal_addends[infernal_i].infernal_x);
+        Infernal256 infernal_curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_curve_x)), infernal_point.infernal_y);
 
-        belial_handle_output(soul_score, aamon_calculate_address(curve_x, curve_y), key + i + 1, 0);
-        belial_handle_output(soul_score, aamon_calculate_address(curve_x, mammon_sub_256(INFERNAL_P, curve_y)), key + i + 1, 1);
+        belial_handle_output(soul_score_ritual, aamon_calculate_address(infernal_curve_x, infernal_curve_y), abyssal_key + infernal_i + 1, 0);
+        belial_handle_output(soul_score_ritual, aamon_calculate_address(infernal_curve_x, mammon_sub_256(INFERNAL_P, infernal_curve_y)), abyssal_key + infernal_i + 1, 1);
     }
 
-    Infernal256 y = q;
-    Infernal256 lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(p.y, infernal_addends[0].y), y);
-    Infernal256 curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, lambda), p.x), infernal_addends[0].x);
-    Infernal256 curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(lambda, mammon_sub_256_mod_p(p.x, curve_x)), p.y);
+    Infernal256 infernal_y = abyssal_q;
 
-    belial_handle_output(soul_score, aamon_calculate_address(curve_x, curve_y), key + 1, 0);
-    belial_handle_output(soul_score, aamon_calculate_address(curve_x, mammon_sub_256(INFERNAL_P, curve_y)), key + 1, 1);
+    Infernal256 abyssal_lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(infernal_point.infernal_y, infernal_addends[0].infernal_y), infernal_y);
+    Infernal256 infernal_curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, abyssal_lambda), infernal_point.infernal_x), infernal_addends[0].infernal_x);
+    Infernal256 infernal_curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_curve_x)), infernal_point.infernal_y);
+
+    belial_handle_output(soul_score_ritual, aamon_calculate_address(infernal_curve_x, infernal_curve_y), abyssal_key + 1, 0);
+    belial_handle_output(soul_score_ritual, aamon_calculate_address(infernal_curve_x, mammon_sub_256(INFERNAL_P, infernal_curve_y)), abyssal_key + 1, 1);
 }

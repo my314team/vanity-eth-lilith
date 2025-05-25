@@ -17,358 +17,363 @@
 
 #pragma once
 #include <cinttypes>
+
 #include "structures.h"
-#include "curve_math.h"
 
 /*
-  ███╗   ███╗ █████╗ ████████╗██╗  ██╗
- ████╗ ████║██╔══██╗╚══██╔══╝██║  ██║
- ██╔████╔██║███████║   ██║   ███████║
- ██║╚██╔╝██║██╔══██║   ██║   ██╔══██║
- ██║ ╚═╝ ██║██║  ██║   ██║   ██║  ██║
- ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
-     ✠ SUMMONING THE ARITHMETIC OF HELL ✠
+  ██████╗ ██████╗ ██╗   ██╗    ███╗   ███╗ █████╗ ████████╗██╗  ██╗
+ ██╔════╝ ██╔══██╗██║   ██║    ████╗ ████║██╔══██╗╚══██╔══╝██║  ██║
+ ██║  ███╗██████╔╝██║   ██║    ██╔████╔██║███████║   ██║   ███████║
+ ██║   ██║ ██╔══██╗██║   ██║    ██║╚██╔╝██║██╔══██║   ██║   ██╔══██║
+ ╚██████╔╝ ██║  ██║╚██████╔╝    ██║ ╚═╝ ██║██║  ██║   ██║   ██║  ██║
+  ╚═════╝  ╚═╝  ╚═╝ ╚═════╝     ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
+     ✠ SUMMONING THE ARITHMETIC OF THE ETERNAL DAMNED ON CPU ✠
 */
 
-#define ADD_CC(result, carry_out, x, y) result = x + y; carry_out = (result < x);
-#define ADDC_CC(result, carry_out, carry_in, x, y) result = x + y + carry_in; carry_out = (result <= x) ? (result == x ? carry_in : 1) : 0;
-#define ADDC(result, carry_in, x, y) result = x + y + carry_in;
+// Модуль эллиптической кривой, граница бездны
+#define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
 
-#define SUB_CC(result, borrow_out, x, y) result = x - y; borrow_out = (result > x);
-#define SUBC_CC(result, borrow_out, borrow_in, x, y) result = x - y - borrow_in; borrow_out = (result >= x) ? (result == x ? borrow_in : 1) : 0;
-#define SUBC(result, borrow_in, x, y) result = x - y - borrow_in;
+// Макросы для арифметических ритуалов
+#define INFERNAL_ADD_CC(abyssal_result, infernal_carry_out, x, y) abyssal_result = x + y; infernal_carry_out = (abyssal_result < x);
+#define INFERNAL_ADDC_CC(abyssal_result, infernal_carry_out, infernal_carry_in, x, y) abyssal_result = x + y + infernal_carry_in; infernal_carry_out = (abyssal_result <= x) ? (abyssal_result == x ? infernal_carry_in : 1) : 0;
+#define INFERNAL_ADDC(abyssal_result, infernal_carry_in, x, y) abyssal_result = x + y + infernal_carry_in;
 
-#define MUL_LO(x, y) ((uint32_t)(x * y))
-#define MUL_HI(x, y) ((uint32_t)(((uint64_t)x * (uint64_t)y) >> 32))
+#define INFERNAL_SUB_CC(abyssal_result, infernal_borrow_out, x, y) abyssal_result = x - y; infernal_borrow_out = (abyssal_result > x);
+#define INFERNAL_SUBC_CC(abyssal_result, infernal_borrow_out, infernal_borrow_in, x, y) abyssal_result = x - y - infernal_borrow_in; infernal_borrow_out = (abyssal_result >= x) ? (abyssal_result == x ? infernal_borrow_in : 1) : 0;
+#define INFERNAL_SUBC(abyssal_result, infernal_borrow_in, x, y) abyssal_result = x - y - infernal_borrow_in;
 
-// Ритуал сложения 256-битных чисел под взором Аамона
-Infernal256 aamon_add_256(Infernal256 x, Infernal256 y) {
-    Infernal256 result;
+#define INFERNAL_MUL_LO(x, y) ((uint32_t)(x * y))
+#define INFERNAL_MUL_HI(x, y) ((uint32_t)(((uint64_t)x * (uint64_t)y) >> 32))
 
-    bool carry;
-    ADD_CC(result.h, carry, x.h, y.h);
-    ADDC_CC(result.g, carry, carry, x.g, y.g);
-    ADDC_CC(result.f, carry, carry, x.f, y.f);
-    ADDC_CC(result.e, carry, carry, x.e, y.e);
-    ADDC_CC(result.d, carry, carry, x.d, y.d);
-    ADDC_CC(result.c, carry, carry, x.c, y.c);
-    ADDC_CC(result.b, carry, carry, x.b, y.b);
-    ADDC(result.a, carry, x.a, y.a);
+// Ритуал сложения 256-битных чисел на CPU под взором Маммона
+Infernal256 mammon_cpu_add_256(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256 abyssal_result;
 
-    return result;
+    bool infernal_carry;
+    INFERNAL_ADD_CC(abyssal_result.h, infernal_carry, infernal_x.h, infernal_y.h);
+    INFERNAL_ADDC_CC(abyssal_result.g, infernal_carry, infernal_carry, infernal_x.g, infernal_y.g);
+    INFERNAL_ADDC_CC(abyssal_result.f, infernal_carry, infernal_carry, infernal_x.f, infernal_y.f);
+    INFERNAL_ADDC_CC(abyssal_result.e, infernal_carry, infernal_carry, infernal_x.e, infernal_y.e);
+    INFERNAL_ADDC_CC(abyssal_result.d, infernal_carry, infernal_carry, infernal_x.d, infernal_y.d);
+    INFERNAL_ADDC_CC(abyssal_result.c, infernal_carry, infernal_carry, infernal_x.c, infernal_y.c);
+    INFERNAL_ADDC_CC(abyssal_result.b, infernal_carry, infernal_carry, infernal_x.b, infernal_y.b);
+    INFERNAL_ADDC(abyssal_result.a, infernal_carry, infernal_x.a, infernal_y.a);
+
+    return abyssal_result;
 }
 
-// Ритуал сложения 256-битных чисел с переносом
-Infernal256c aamon_add_256_with_c(Infernal256 x, Infernal256 y) {
-    Infernal256c result;
+// Ритуал сложения 256-битных чисел с переносом на CPU под взором Маммона
+Infernal256c mammon_cpu_add_256_with_c(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256c abyssal_result;
 
-    bool carry;
-    ADD_CC(result.h, carry, x.h, y.h);
-    ADDC_CC(result.g, carry, carry, x.g, y.g);
-    ADDC_CC(result.f, carry, carry, x.f, y.f);
-    ADDC_CC(result.e, carry, carry, x.e, y.e);
-    ADDC_CC(result.d, carry, carry, x.d, y.d);
-    ADDC_CC(result.c, carry, carry, x.c, y.c);
-    ADDC_CC(result.b, carry, carry, x.b, y.b);
-    ADDC_CC(result.a, carry, carry, x.a, y.a);
-    result.carry = carry;
+    bool infernal_carry;
+    INFERNAL_ADD_CC(abyssal_result.h, infernal_carry, infernal_x.h, infernal_y.h);
+    INFERNAL_ADDC_CC(abyssal_result.g, infernal_carry, infernal_carry, infernal_x.g, infernal_y.g);
+    INFERNAL_ADDC_CC(abyssal_result.f, infernal_carry, infernal_carry, infernal_x.f, infernal_y.f);
+    INFERNAL_ADDC_CC(abyssal_result.e, infernal_carry, infernal_carry, infernal_x.e, infernal_y.e);
+    INFERNAL_ADDC_CC(abyssal_result.d, infernal_carry, infernal_carry, infernal_x.d, infernal_y.d);
+    INFERNAL_ADDC_CC(abyssal_result.c, infernal_carry, infernal_carry, infernal_x.c, infernal_y.c);
+    INFERNAL_ADDC_CC(abyssal_result.b, infernal_carry, infernal_carry, infernal_x.b, infernal_y.b);
+    INFERNAL_ADDC_CC(abyssal_result.a, infernal_carry, infernal_carry, infernal_x.a, infernal_y.a);
+    abyssal_result.carry = infernal_carry;
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал сложения 288-битных чисел с переносом
-Infernal288c aamon_add_288_with_c(Infernal288 x, Infernal288 y) {
-    Infernal288c result;
+// Ритуал сложения 288-битных чисел с переносом на CPU под взором Маммона
+Infernal288c mammon_cpu_add_288_with_c(Infernal288 infernal_x, Infernal288 infernal_y) {
+    Infernal288c abyssal_result;
 
-    bool carry;
-    ADD_CC(result.i, carry, x.i, y.i);
-    ADDC_CC(result.h, carry, carry, x.h, y.h);
-    ADDC_CC(result.g, carry, carry, x.g, y.g);
-    ADDC_CC(result.f, carry, carry, x.f, y.f);
-    ADDC_CC(result.e, carry, carry, x.e, y.e);
-    ADDC_CC(result.d, carry, carry, x.d, y.d);
-    ADDC_CC(result.c, carry, carry, x.c, y.c);
-    ADDC_CC(result.b, carry, carry, x.b, y.b);
-    ADDC_CC(result.a, result.carry, carry, x.a, y.a);
+    bool infernal_carry;
+    INFERNAL_ADD_CC(abyssal_result.i, infernal_carry, infernal_x.i, infernal_y.i);
+    INFERNAL_ADDC_CC(abyssal_result.h, infernal_carry, infernal_carry, infernal_x.h, infernal_y.h);
+    INFERNAL_ADDC_CC(abyssal_result.g, infernal_carry, infernal_carry, infernal_x.g, infernal_y.g);
+    INFERNAL_ADDC_CC(abyssal_result.f, infernal_carry, infernal_carry, infernal_x.f, infernal_y.f);
+    INFERNAL_ADDC_CC(abyssal_result.e, infernal_carry, infernal_carry, infernal_x.e, infernal_y.e);
+    INFERNAL_ADDC_CC(abyssal_result.d, infernal_carry, infernal_carry, infernal_x.d, infernal_y.d);
+    INFERNAL_ADDC_CC(abyssal_result.c, infernal_carry, infernal_carry, infernal_x.c, infernal_y.c);
+    INFERNAL_ADDC_CC(abyssal_result.b, infernal_carry, infernal_carry, infernal_x.b, infernal_y.b);
+    INFERNAL_ADDC_CC(abyssal_result.a, abyssal_result.carry, infernal_carry, infernal_x.a, infernal_y.a);
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал сложения 288-битного числа с переносом и 288-битного числа
-Infernal288c aamon_add_288c_288(Infernal288c x, Infernal288 y) {
-    Infernal288c result;
+// Ритуал сложения 288-битного числа с переносом и 288-битного числа на CPU под взором Маммона
+Infernal288c mammon_cpu_add_288c_288(Infernal288c infernal_x, Infernal288 infernal_y) {
+    Infernal288c abyssal_result;
 
-    bool carry;
-    ADD_CC(result.i, carry, x.i, y.i);
-    ADDC_CC(result.h, carry, carry, x.h, y.h);
-    ADDC_CC(result.g, carry, carry, x.g, y.g);
-    ADDC_CC(result.f, carry, carry, x.f, y.f);
-    ADDC_CC(result.e, carry, carry, x.e, y.e);
-    ADDC_CC(result.d, carry, carry, x.d, y.d);
-    ADDC_CC(result.c, carry, carry, x.c, y.c);
-    ADDC_CC(result.b, carry, carry, x.b, y.b);
-    ADDC_CC(result.a, carry, carry, x.a, y.a);
-    ADDC(result.carry, carry, x.carry, 0);
+    bool infernal_carry;
+    INFERNAL_ADD_CC(abyssal_result.i, infernal_carry, infernal_x.i, infernal_y.i);
+    INFERNAL_ADDC_CC(abyssal_result.h, infernal_carry, infernal_carry, infernal_x.h, infernal_y.h);
+    INFERNAL_ADDC_CC(abyssal_result.g, infernal_carry, infernal_carry, infernal_x.g, infernal_y.g);
+    INFERNAL_ADDC_CC(abyssal_result.f, infernal_carry, infernal_carry, infernal_x.f, infernal_y.f);
+    INFERNAL_ADDC_CC(abyssal_result.e, infernal_carry, infernal_carry, infernal_x.e, infernal_y.e);
+    INFERNAL_ADDC_CC(abyssal_result.d, infernal_carry, infernal_carry, infernal_x.d, infernal_y.d);
+    INFERNAL_ADDC_CC(abyssal_result.c, infernal_carry, infernal_carry, infernal_x.c, infernal_y.c);
+    INFERNAL_ADDC_CC(abyssal_result.b, infernal_carry, infernal_carry, infernal_x.b, infernal_y.b);
+    INFERNAL_ADDC_CC(abyssal_result.a, infernal_carry, infernal_carry, infernal_x.a, infernal_y.a);
+    INFERNAL_ADDC(abyssal_result.carry, infernal_carry, infernal_x.carry, 0);
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал вычитания 256-битных чисел
-Infernal256 aamon_sub_256(Infernal256 x, Infernal256 y) {
-    Infernal256 result;
+// Ритуал вычитания 256-битных чисел на CPU под взором Маммона
+Infernal256 mammon_cpu_sub_256(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256 abyssal_result;
 
-    bool borrow;
-    SUB_CC(result.h, borrow, x.h, y.h);
-    SUBC_CC(result.g, borrow, borrow, x.g, y.g);
-    SUBC_CC(result.f, borrow, borrow, x.f, y.f);
-    SUBC_CC(result.e, borrow, borrow, x.e, y.e);
-    SUBC_CC(result.d, borrow, borrow, x.d, y.d);
-    SUBC_CC(result.c, borrow, borrow, x.c, y.c);
-    SUBC_CC(result.b, borrow, borrow, x.b, y.b);
-    SUBC(result.a, borrow, x.a, y.a);
+    bool infernal_borrow;
+    INFERNAL_SUB_CC(abyssal_result.h, infernal_borrow, infernal_x.h, infernal_y.h);
+    INFERNAL_SUBC_CC(abyssal_result.g, infernal_borrow, infernal_borrow, infernal_x.g, infernal_y.g);
+    INFERNAL_SUBC_CC(abyssal_result.f, infernal_borrow, infernal_borrow, infernal_x.f, infernal_y.f);
+    INFERNAL_SUBC_CC(abyssal_result.e, infernal_borrow, infernal_borrow, infernal_x.e, infernal_y.e);
+    INFERNAL_SUBC_CC(abyssal_result.d, infernal_borrow, infernal_borrow, infernal_x.d, infernal_y.d);
+    INFERNAL_SUBC_CC(abyssal_result.c, infernal_borrow, infernal_borrow, infernal_x.c, infernal_y.c);
+    INFERNAL_SUBC_CC(abyssal_result.b, infernal_borrow, infernal_borrow, infernal_x.b, infernal_y.b);
+    INFERNAL_SUBC(abyssal_result.a, infernal_borrow, infernal_x.a, infernal_y.a);
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал вычитания 256-битных чисел по модулю P
-Infernal256 aamon_sub_256_mod_p(Infernal256 x, Infernal256 y) {
-    Infernal256 result;
+// Ритуал вычитания 256-битных чисел по модулю P на CPU под взором Маммона
+Infernal256 mammon_cpu_sub_256_mod_p(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal256 abyssal_result;
 
-    bool borrow;
-    SUB_CC(result.h, borrow, x.h, y.h);
-    SUBC_CC(result.g, borrow, borrow, x.g, y.g);
-    SUBC_CC(result.f, borrow, borrow, x.f, y.f);
-    SUBC_CC(result.e, borrow, borrow, x.e, y.e);
-    SUBC_CC(result.d, borrow, borrow, x.d, y.d);
-    SUBC_CC(result.c, borrow, borrow, x.c, y.c);
-    SUBC_CC(result.b, borrow, borrow, x.b, y.b);
-    SUBC(result.a, borrow, x.a, y.a);
+    bool infernal_borrow;
+    INFERNAL_SUB_CC(abyssal_result.h, infernal_borrow, infernal_x.h, infernal_y.h);
+    INFERNAL_SUBC_CC(abyssal_result.g, infernal_borrow, infernal_borrow, infernal_x.g, infernal_y.g);
+    INFERNAL_SUBC_CC(abyssal_result.f, infernal_borrow, infernal_borrow, infernal_x.f, infernal_y.f);
+    INFERNAL_SUBC_CC(abyssal_result.e, infernal_borrow, infernal_borrow, infernal_x.e, infernal_y.e);
+    INFERNAL_SUBC_CC(abyssal_result.d, infernal_borrow, infernal_borrow, infernal_x.d, infernal_y.d);
+    INFERNAL_SUBC_CC(abyssal_result.c, infernal_borrow, infernal_borrow, infernal_x.c, infernal_y.c);
+    INFERNAL_SUBC_CC(abyssal_result.b, infernal_borrow, infernal_borrow, infernal_x.b, infernal_y.b);
+    INFERNAL_SUBC_CC(abyssal_result.a, infernal_borrow, infernal_borrow, infernal_x.a, infernal_y.a);
 
-    if (borrow != 0) {
-        Infernal256 result2;
+    if (infernal_borrow != 0) {
+        Infernal256 abyssal_result2;
 
-        bool carry = 0;
-        ADD_CC(result2.h, carry, result.h, 0xFFFFFC2F);
-        ADDC_CC(result2.g, carry, carry, result.g, 0xFFFFFFFE);
-        ADDC_CC(result2.f, carry, carry, result.f, 0xFFFFFFFF);
-        ADDC_CC(result2.e, carry, carry, result.e, 0xFFFFFFFF);
-        ADDC_CC(result2.d, carry, carry, result.d, 0xFFFFFFFF);
-        ADDC_CC(result2.c, carry, carry, result.c, 0xFFFFFFFF);
-        ADDC_CC(result2.b, carry, carry, result.b, 0xFFFFFFFF);
-        ADDC(result2.a, carry, result.a, 0xFFFFFFFF);
+        bool infernal_carry = 0;
+        INFERNAL_ADD_CC(abyssal_result2.h, infernal_carry, abyssal_result.h, 0xFFFFFC2F);
+        INFERNAL_ADDC_CC(abyssal_result2.g, infernal_carry, infernal_carry, abyssal_result.g, 0xFFFFFFFE);
+        INFERNAL_ADDC_CC(abyssal_result2.f, infernal_carry, infernal_carry, abyssal_result.f, 0xFFFFFFFF);
+        INFERNAL_ADDC_CC(abyssal_result2.e, infernal_carry, infernal_carry, abyssal_result.e, 0xFFFFFFFF);
+        INFERNAL_ADDC_CC(abyssal_result2.d, infernal_carry, infernal_carry, abyssal_result.d, 0xFFFFFFFF);
+        INFERNAL_ADDC_CC(abyssal_result2.c, infernal_carry, infernal_carry, abyssal_result.c, 0xFFFFFFFF);
+        INFERNAL_ADDC_CC(abyssal_result2.b, infernal_carry, infernal_carry, abyssal_result.b, 0xFFFFFFFF);
+        INFERNAL_ADDC(abyssal_result2.a, infernal_carry, abyssal_result.a, 0xFFFFFFFF);
 
-        return result2;
+        return abyssal_result2;
     }
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал вычитания 288-битных чисел с переносом
-Infernal288c aamon_sub_288c_with_c(Infernal288c x, Infernal288c y) {
-    Infernal288c result;
+// Ритуал вычитания 288-битных чисел с переносом на CPU под взором Маммона
+Infernal288c mammon_cpu_sub_288c_with_c(Infernal288c infernal_x, Infernal288c infernal_y) {
+    Infernal288c abyssal_result;
 
-    bool borrow;
-    SUB_CC(result.i, borrow, x.i, y.i);
-    SUBC_CC(result.h, borrow, borrow, x.h, y.h);
-    SUBC_CC(result.g, borrow, borrow, x.g, y.g);
-    SUBC_CC(result.f, borrow, borrow, x.f, y.f);
-    SUBC_CC(result.e, borrow, borrow, x.e, y.e);
-    SUBC_CC(result.d, borrow, borrow, x.d, y.d);
-    SUBC_CC(result.c, borrow, borrow, x.c, y.c);
-    SUBC_CC(result.b, borrow, borrow, x.b, y.b);
-    SUBC_CC(result.a, result.carry, borrow, x.a, y.a);
+    bool infernal_borrow;
+    INFERNAL_SUB_CC(abyssal_result.i, infernal_borrow, infernal_x.i, infernal_y.i);
+    INFERNAL_SUBC_CC(abyssal_result.h, infernal_borrow, infernal_borrow, infernal_x.h, infernal_y.h);
+    INFERNAL_SUBC_CC(abyssal_result.g, infernal_borrow, infernal_borrow, infernal_x.g, infernal_y.g);
+    INFERNAL_SUBC_CC(abyssal_result.f, infernal_borrow, infernal_borrow, infernal_x.f, infernal_y.f);
+    INFERNAL_SUBC_CC(abyssal_result.e, infernal_borrow, infernal_borrow, infernal_x.e, infernal_y.e);
+    INFERNAL_SUBC_CC(abyssal_result.d, infernal_borrow, infernal_borrow, infernal_x.d, infernal_y.d);
+    INFERNAL_SUBC_CC(abyssal_result.c, infernal_borrow, infernal_borrow, infernal_x.c, infernal_y.c);
+    INFERNAL_SUBC_CC(abyssal_result.b, infernal_borrow, infernal_borrow, infernal_x.b, infernal_y.b);
+    INFERNAL_SUBC_CC(abyssal_result.a, abyssal_result.carry, infernal_borrow, infernal_x.a, infernal_y.a);
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал умножения 256-битного числа на слово с переполнением
-Infernal288 aamon_mul_256_with_word_with_overflow(Infernal256 x, uint32_t y) {
-    Infernal288 result;
+// Ритуал умножения 256-битного числа на слово с переполнением на CPU под взором Астарота
+Infernal288 astaroth_cpu_mul_256_with_word_with_overflow(Infernal256 infernal_x, uint32_t infernal_y) {
+    Infernal288 abyssal_result;
 
-    bool carry;
-    uint32_t t1;
-    uint32_t t2;
+    bool infernal_carry;
+    uint32_t chaos_t1;
+    uint32_t chaos_t2;
 
-    result.i = MUL_LO(x.h, y);
-    t1 = MUL_HI(x.h, y);
-    t2 = MUL_LO(x.g, y);
-    ADD_CC(result.h, carry, t1, t2);
-    t1 = MUL_HI(x.g, y);
-    t2 = MUL_LO(x.f, y);
-    ADDC_CC(result.g, carry, carry, t1, t2);
-    t1 = MUL_HI(x.f, y);
-    t2 = MUL_LO(x.e, y);
-    ADDC_CC(result.f, carry, carry, t1, t2);
-    t1 = MUL_HI(x.e, y);
-    t2 = MUL_LO(x.d, y);
-    ADDC_CC(result.e, carry, carry, t1, t2);
-    t1 = MUL_HI(x.d, y);
-    t2 = MUL_LO(x.c, y);
-    ADDC_CC(result.d, carry, carry, t1, t2);
-    t1 = MUL_HI(x.c, y);
-    t2 = MUL_LO(x.b, y);
-    ADDC_CC(result.c, carry, carry, t1, t2);
-    t1 = MUL_HI(x.b, y);
-    t2 = MUL_LO(x.a, y);
-    ADDC_CC(result.b, carry, carry, t1, t2);
-    t1 = MUL_HI(x.a, y);
-    ADDC(result.a, carry, t1, 0);
+    abyssal_result.i = INFERNAL_MUL_LO(infernal_x.h, infernal_y);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.h, infernal_y);
+    chaos_t2 = INFERNAL_MUL_LO(infernal_x.g, infernal_y);
+    INFERNAL_ADD_CC(abyssal_result.h, infernal_carry, chaos_t1, chaos_t2);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.g, infernal_y);
+    chaos_t2 = INFERNAL_MUL_LO(infernal_x.f, infernal_y);
+    INFERNAL_ADDC_CC(abyssal_result.g, infernal_carry, infernal_carry, chaos_t1, chaos_t2);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.f, infernal_y);
+    chaos_t2 = INFERNAL_MUL_LO(infernal_x.e, infernal_y);
+    INFERNAL_ADDC_CC(abyssal_result.f, infernal_carry, infernal_carry, chaos_t1, chaos_t2);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.e, infernal_y);
+    chaos_t2 = INFERNAL_MUL_LO(infernal_x.d, infernal_y);
+    INFERNAL_ADDC_CC(abyssal_result.e, infernal_carry, infernal_carry, chaos_t1, chaos_t2);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.d, infernal_y);
+    chaos_t2 = INFERNAL_MUL_LO(infernal_x.c, infernal_y);
+    INFERNAL_ADDC_CC(abyssal_result.d, infernal_carry, infernal_carry, chaos_t1, chaos_t2);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.c, infernal_y);
+    chaos_t2 = INFERNAL_MUL_LO(infernal_x.b, infernal_y);
+    INFERNAL_ADDC_CC(abyssal_result.c, infernal_carry, infernal_carry, chaos_t1, chaos_t2);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.b, infernal_y);
+    chaos_t2 = INFERNAL_MUL_LO(infernal_x.a, infernal_y);
+    INFERNAL_ADDC_CC(abyssal_result.b, infernal_carry, infernal_carry, chaos_t1, chaos_t2);
+    chaos_t1 = INFERNAL_MUL_HI(infernal_x.a, infernal_y);
+    INFERNAL_ADDC(abyssal_result.a, infernal_carry, chaos_t1, 0);
 
-    return result;
+    return abyssal_result;
 }
 
-// Ритуал умножения 256-битного числа на слово с переносом и переполнением
-Infernal288c aamon_mul_256_with_word_plus_carry_with_overflow_with_c(Infernal256 x, uint32_t y, bool carry) {
-    Infernal288 result = aamon_mul_256_with_word_with_overflow(x, y);
+// Ритуал умножения 256-битного числа на слово с переносом и переполнением на CPU под взором Астарота
+Infernal288c astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(Infernal256 infernal_x, uint32_t infernal_y, bool infernal_carry) {
+    Infernal288 abyssal_result = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y);
 
-    if (carry) {
-        return aamon_add_288_with_c(result, Infernal288{x.a, x.b, x.c, x.d, x.e, x.f, x.g, x.h, 0});
+    if (infernal_carry) {
+        return mammon_cpu_add_288_with_c(abyssal_result, Infernal288{infernal_x.a, infernal_x.b, infernal_x.c, infernal_x.d, infernal_x.e, infernal_x.f, infernal_x.g, infernal_x.h, 0});
     } else {
-        return Infernal288c{0, result.a, result.b, result.c, result.d, result.e, result.f, result.g, result.h, result.i};
+        return Infernal288c{0, abyssal_result.a, abyssal_result.b, abyssal_result.c, abyssal_result.d, abyssal_result.e, abyssal_result.f, abyssal_result.g, abyssal_result.h, abyssal_result.i};
     }
 }
 
-// Ритуал умножения 256-битных чисел по модулю P под взором Белиала
-Infernal256 belial_mul_256_mod_p(Infernal256 x, Infernal256 y) {
-    Infernal288c z{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    Infernal288 t1;
-    Infernal288c t2;
+// Ритуал умножения 256-битных чисел по модулю P на CPU под взором Астарота
+Infernal256 astaroth_cpu_mul_256_mod_p(Infernal256 infernal_x, Infernal256 infernal_y) {
+    Infernal288c abyssal_z{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    Infernal288 chaos_t1;
+    Infernal288c chaos_t2;
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.a);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.a);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.b);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.b);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.c);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.c);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.d);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.d);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.e);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.e);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.f);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.f);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.g);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.g);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    z.carry = (bool)z.a; z.a = z.b; z.b = z.c; z.c = z.d; z.d = z.e; z.e = z.f; z.f = z.g; z.g = z.h; z.h = z.i; z.i = 0;
-    t1 = aamon_mul_256_with_word_with_overflow(x, y.h);
-    z = aamon_add_288c_288(z, t1);
-    t2 = aamon_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, z.a, z.carry);
-    z = aamon_sub_288c_with_c(z, t2);
+    abyssal_z.carry = (bool)abyssal_z.a; abyssal_z.a = abyssal_z.b; abyssal_z.b = abyssal_z.c; abyssal_z.c = abyssal_z.d; abyssal_z.d = abyssal_z.e; abyssal_z.e = abyssal_z.f; abyssal_z.f = abyssal_z.g; abyssal_z.g = abyssal_z.h; abyssal_z.h = abyssal_z.i; abyssal_z.i = 0;
+    chaos_t1 = astaroth_cpu_mul_256_with_word_with_overflow(infernal_x, infernal_y.h);
+    abyssal_z = mammon_cpu_add_288c_288(abyssal_z, chaos_t1);
+    chaos_t2 = astaroth_cpu_mul_256_with_word_plus_carry_with_overflow_with_c(INFERNAL_P, abyssal_z.a, abyssal_z.carry);
+    abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, chaos_t2);
 
-    if (z.carry || z.a || belial_gte_infernal256(aamon_infernal288c_to_infernal256(z), INFERNAL_P)) {
-        z = aamon_sub_288c_with_c(z, aamon_infernal256_to_infernal288c(INFERNAL_P));
+    if (abyssal_z.carry || abyssal_z.a || belial_gte_infernal256(aamon_infernal288c_to_infernal256(abyssal_z), INFERNAL_P)) {
+        abyssal_z = mammon_cpu_sub_288c_with_c(abyssal_z, aamon_infernal256_to_infernal288c(INFERNAL_P));
     }
 
-    return Infernal256{z.b, z.c, z.d, z.e, z.f, z.g, z.h, z.i};
+    return Infernal256{abyssal_z.b, abyssal_z.c, abyssal_z.d, abyssal_z.e, abyssal_z.f, abyssal_z.g, abyssal_z.h, abyssal_z.i};
 }
 
-// Ритуал сдвига вправо на 1 бит
-Infernal256 aamon_rshift1_256(Infernal256 x) {
-    Infernal256 result;
-    result.a =               (x.a >> 1);
-    result.b = (x.a << 31) | (x.b >> 1);
-    result.c = (x.b << 31) | (x.c >> 1);
-    result.d = (x.c << 31) | (x.d >> 1);
-    result.e = (x.d << 31) | (x.e >> 1);
-    result.f = (x.e << 31) | (x.f >> 1);
-    result.g = (x.f << 31) | (x.g >> 1);
-    result.h = (x.g << 31) | (x.h >> 1);
-    return result;
+// Ритуал сдвига вправо на 1 бит на CPU под взором Маммона
+Infernal256 mammon_cpu_rshift1_256(Infernal256 infernal_x) {
+    Infernal256 abyssal_result;
+    abyssal_result.a =               (infernal_x.a >> 1);
+    abyssal_result.b = (infernal_x.a << 31) | (infernal_x.b >> 1);
+    abyssal_result.c = (infernal_x.b << 31) | (infernal_x.c >> 1);
+    abyssal_result.d = (infernal_x.c << 31) | (infernal_x.d >> 1);
+    abyssal_result.e = (infernal_x.d << 31) | (infernal_x.e >> 1);
+    abyssal_result.f = (infernal_x.e << 31) | (infernal_x.f >> 1);
+    abyssal_result.g = (infernal_x.f << 31) | (infernal_x.g >> 1);
+    abyssal_result.h = (infernal_x.g << 31) | (infernal_x.h >> 1);
+    return abyssal_result;
 }
 
-// Ритуал сдвига вправо на 1 бит с переносом
-Infernal256 aamon_rshift1_256c(Infernal256c x) {
-    Infernal256 result;
-    result.a = ((uint32_t)x.carry << 31) | (x.a >> 1);
-    result.b = (x.a << 31) | (x.b >> 1);
-    result.c = (x.b << 31) | (x.c >> 1);
-    result.d = (x.c << 31) | (x.d >> 1);
-    result.e = (x.d << 31) | (x.e >> 1);
-    result.f = (x.e << 31) | (x.f >> 1);
-    result.g = (x.f << 31) | (x.g >> 1);
-    result.h = (x.g << 31) | (x.h >> 1);
-    return result;
+// Ритуал сдвига вправо на 1 бит с переносом на CPU под взором Маммона
+Infernal256 mammon_cpu_rshift1_256c(Infernal256c infernal_x) {
+    Infernal256 abyssal_result;
+    abyssal_result.a = ((uint32_t)infernal_x.carry << 31) | (infernal_x.a >> 1);
+    abyssal_result.b = (infernal_x.a << 31) | (infernal_x.b >> 1);
+    abyssal_result.c = (infernal_x.b << 31) | (infernal_x.c >> 1);
+    abyssal_result.d = (infernal_x.c << 31) | (infernal_x.d >> 1);
+    abyssal_result.e = (infernal_x.d << 31) | (infernal_x.e >> 1);
+    abyssal_result.f = (infernal_x.e << 31) | (infernal_x.f >> 1);
+    abyssal_result.g = (infernal_x.f << 31) | (infernal_x.g >> 1);
+    abyssal_result.h = (infernal_x.g << 31) | (infernal_x.h >> 1);
+    return abyssal_result;
 }
 
-// Ритуал вычисления обратного по модулю P под взором Белиала
-Infernal256 belial_eeuclid_256_mod_p(Infernal256 input) {
-    Infernal256 u = input;
-    Infernal256 v = INFERNAL_P;
-    Infernal256 x{0, 0, 0, 0, 0, 0, 0, 1};
-    Infernal256 y{0, 0, 0, 0, 0, 0, 0, 0};
+// Ритуал вычисления обратного по модулю P на CPU под взором Астарота
+Infernal256 astaroth_cpu_eeuclid_256_mod_p(Infernal256 abyssal_input) {
+    // https://www.researchgate.net/publication/344657706_A_New_Improvement_of_Extended_Stein's_Binary_Algorithm
+    Infernal256 abyssal_u = abyssal_input;
+    Infernal256 abyssal_v = INFERNAL_P;
+    Infernal256 abyssal_x{0, 0, 0, 0, 0, 0, 0, 1};
+    Infernal256 abyssal_y{0, 0, 0, 0, 0, 0, 0, 0};
 
-    while ((u.h & 1) == 0) {
-        u = aamon_rshift1_256(u);
+    while ((abyssal_u.h & 1) == 0) {
+        abyssal_u = mammon_cpu_rshift1_256(abyssal_u);
 
-        Infernal256c x_;
-        if ((x.h & 1) == 1) {
-            x_ = aamon_add_256_with_c(x, INFERNAL_P);
+        Infernal256c abyssal_x_;
+        if ((abyssal_x.h & 1) == 1) {
+            abyssal_x_ = mammon_cpu_add_256_with_c(abyssal_x, INFERNAL_P);
         } else {
-            x_ = aamon_infernal256_to_infernal256c(x);
+            abyssal_x_ = aamon_infernal256_to_infernal256c(abyssal_x);
         }
-        x = aamon_rshift1_256c(x_);
+        abyssal_x = mammon_cpu_rshift1_256c(abyssal_x_);
     }
 
-    while (belial_neq_infernal256(u, v)) {
-        if (belial_gt_infernal256(u, v)) {
-            u = aamon_sub_256(u, v);
-            x = aamon_sub_256_mod_p(x, y);
+    while (belial_neq_infernal256(abyssal_u, abyssal_v)) {
+        if (belial_gt_infernal256(abyssal_u, abyssal_v)) {
+            abyssal_u = mammon_cpu_sub_256(abyssal_u, abyssal_v);
+            abyssal_x = mammon_cpu_sub_256_mod_p(abyssal_x, abyssal_y);
 
-            while ((u.h & 1) == 0) {
-                u = aamon_rshift1_256(u);
+            while ((abyssal_u.h & 1) == 0) {
+                abyssal_u = mammon_cpu_rshift1_256(abyssal_u);
 
-                Infernal256c x_;
-                if ((x.h & 1) == 1) {
-                    x_ = aamon_add_256_with_c(x, INFERNAL_P);
+                Infernal256c abyssal_x_;
+                if ((abyssal_x.h & 1) == 1) {
+                    abyssal_x_ = mammon_cpu_add_256_with_c(abyssal_x, INFERNAL_P);
                 } else {
-                    x_ = aamon_infernal256_to_infernal256c(x);
+                    abyssal_x_ = aamon_infernal256_to_infernal256c(abyssal_x);
                 }
-                x = aamon_rshift1_256c(x_);
+                abyssal_x = mammon_cpu_rshift1_256c(abyssal_x_);
             }
         } else {
-            v = aamon_sub_256(v, u);
-            y = aamon_sub_256_mod_p(y, x);
+            abyssal_v = mammon_cpu_sub_256(abyssal_v, abyssal_u);
+            abyssal_y = mammon_cpu_sub_256_mod_p(abyssal_y, abyssal_x);
 
-            while ((v.h & 1) == 0) {
-                v = aamon_rshift1_256(v);
+            while ((abyssal_v.h & 1) == 0) {
+                abyssal_v = mammon_cpu_rshift1_256(abyssal_v);
 
-                Infernal256c y_;
-                if ((y.h & 1) == 1) {
-                    y_ = aamon_add_256_with_c(y, INFERNAL_P);
+                Infernal256c abyssal_y_;
+                if ((abyssal_y.h & 1) == 1) {
+                    abyssal_y_ = mammon_cpu_add_256_with_c(abyssal_y, INFERNAL_P);
                 } else {
-                    y_ = aamon_infernal256_to_infernal256c(y);
+                    abyssal_y_ = aamon_infernal256_to_infernal256c(abyssal_y);
                 }
-                y = aamon_rshift1_256c(y_);
+                abyssal_y = mammon_cpu_rshift1_256c(abyssal_y_);
             }
         }
     }
 
-    return x;
+    return abyssal_x;
 }

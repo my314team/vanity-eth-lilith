@@ -20,16 +20,22 @@
 
 /*
   ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
- ██╔════╝ ██╔══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
- ██║  ███╗██████╔╝██╔██╗ ██║███████╗   ██║   ███████║██╔██╗ ██║   ██║   ███████╗
- ██║   ██║ ██╔══██╗██║╚██╗██║╚════██║   ██║   ██╔══██║██║╚██╗██║   ██║   ╚════██║
- ╚██████╔╝ ██║  ██║██║ ╚████║███████║   ██║   ██║  ██║██║ ╚████║   ██║   ███████║
-  ╚═════╝  ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
-     ✠ SUMMONING THE CONSTANTS OF THE DAMNED ✠
+ ██╔════╝██╔═══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
+ ██║     ██║   ██╗██╔██╗ ██║███████╗   ██║   ███████║██╔██╗ ██║   ██║   ███████╗
+ ██║     ██║   ██╗██║╚██╗██║╚════██║   ██║   ██╔══██║██║╚██╗██║   ██║   ╚════██║
+ ╚██████╗╚██████╔╝██║ ╚████║███████║   ██║   ██║  ██║██║ ╚████║   ██║   ███████║
+  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
+     ✠ FORGING THE SACRED ARTIFACTS OF THE ABYSS ✠
 */
 
-#define INFERNAL_X Infernal256{0x79BE667E, 0xF9DCBBAC, 0x55A06295, 0xCE870B07, 0x029BFCDB, 0x2DCE28D9, 0x59F2815B, 0x16F81798}
-#define INFERNAL_Y Infernal256{0x483ADA77, 0x26A3C465, 0x5DA4FBFC, 0x0E1108A8, 0xFD17B448, 0xA6855419, 0x9C47D08F, 0xFB10D4B8}
-#define INFERNAL_POINT AbyssalCurvePoint{INFERNAL_X, INFERNAL_Y}
+// Координата X генератора эллиптической кривой, выкованная в бездне
+#define INFERNAL_G_X Infernal256{0x79BE667E, 0xF9DCBBAC, 0x55A06295, 0xCE870B07, 0x029BFCDB, 0x2DCE28D9, 0x59F2815B, 0x16F81798}
+
+// Координата Y генератора эллиптической кривой, освящённая Лилит
+#define INFERNAL_G_Y Infernal256{0x483ADA77, 0x26A3C465, 0x5DA4FBFC, 0x0E1108A8, 0xFD17B448, 0xA6855419, 0x9C47D08F, 0xFB10D4B8}
+
+// Генераторная точка кривой, дар Лилит для хаоса
+#define INFERNAL_POINT AbyssalCurvePoint{INFERNAL_G_X, INFERNAL_G_Y}
+
+// Порядок кривой, граница бездны
 #define INFERNAL_N Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xBAAEDCE6, 0xAF48A03B, 0xBFD25E8C, 0xD0364141}
-#define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
