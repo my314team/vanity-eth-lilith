@@ -15,7 +15,6 @@
     <https://www.gnu.org/licenses/>.
 */
 
-
 #if defined(_WIN64)
     #define WIN32_NO_STATUS
     #include <windows.h>
@@ -684,25 +683,18 @@ int main(int argc, char *argv[]) {
             prefix_str = prefix_str.substr(2);
         }
         std::string hex_prefix;
-        // Проверяем, является ли строка числом (например, "3141592666")
-        bool is_number = true;
+        // Проверяем, является ли строка валидной hex-строкой
+        bool is_hex = true;
         for (char c : prefix_str) {
-            if (!std::isdigit(c)) {
-                is_number = false;
+            char lower_c = std::tolower(c);
+            if (!((lower_c >= '0' && lower_c <= '9') || (lower_c >= 'a' && lower_c <= 'f'))) {
+                is_hex = false;
                 break;
             }
         }
-        if (is_number) {
-            // Конвертируем число в hex-строку
-            try {
-                unsigned long long num = std::stoull(prefix_str);
-                char hex_buf[32];
-                snprintf(hex_buf, sizeof(hex_buf), "%llx", num);
-                hex_prefix = hex_buf;
-            } catch (...) {
-                printf("🩸 [ERROR] Invalid numeric prefix! Must be a valid number. 🖤\n");
-                return 1;
-            }
+        if (is_hex) {
+            // Сохраняем как есть, это уже hex-строка
+            hex_prefix = prefix_str;
         } else {
             // Преобразование leetspeak или ASCII в hex
             for (char c : prefix_str) {
@@ -733,7 +725,7 @@ int main(int argc, char *argv[]) {
                 prefix[i / 4] = std::stoul(chunk, nullptr, 16);
             }
         } catch (...) {
-            printf("🩸 [ERROR] Invalid hex prefix! Use valid characters or ensure correct format. 🖤\n");
+            printf("🩸 [ERROR] Invalid hex prefix! Use valid hex characters or ensure correct format. 🖤\n");
             return 1;
         }
     }
