@@ -14,6 +14,15 @@
     For more details, consult the **Arcane Scroll** known as **GNU Affero General Public License** at:
     <https://www.gnu.org/licenses/>.
 */
+/*
+  █████╗ ██████╗ ██████╗ ██████╗ ███████╗███████╗
+ ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
+ ███████║██║  ██║██████╔╝██████╔╝█████╗  █████╗
+ ██╔══██║██║  ██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══╝
+ ██║  ██║██████╔╝██║     ██║     ███████╗███████╗
+ ╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝
+     ✠ CRAFTING THE ADDRESSES OF THE ABYSS ✠
+*/
 
 #pragma once
 #include "curve_math.h"
@@ -55,7 +64,7 @@ __global__ void __launch_bounds__(BLOCK_SIZE) gpu_address_init(CurvePoint* block
     offsets[thread_id * BLOCK_SIZE] = CurvePoint{curve_x, curve_y};
 }
 
-__global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_address_work(int score_method, CurvePoint* offsets, uint32_t prefix, int prefix_bytes) {
+__global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_address_work(int score_method, CurvePoint* offsets, uint32_t prefix[MAX_PREFIX_BYTES / 4], int prefix_bytes) {
     bool b = __isGlobal(offsets);
     __builtin_assume(b);
 

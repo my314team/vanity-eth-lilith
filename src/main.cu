@@ -43,6 +43,7 @@
 #define OUTPUT_BUFFER_SIZE 10000
 #define BLOCK_SIZE 256U
 #define THREAD_WORK (1U << 8)
+#define MAX_PREFIX_BYTES 8 // Максимальная длина префикса в байтах (16 hex-символов)
 
 __constant__ CurvePoint thread_offsets[BLOCK_SIZE];
 __constant__ CurvePoint addends[THREAD_WORK - 1];
@@ -84,9 +85,31 @@ __device__ int score_leading_zeros(Address a) {
     return n >> 3;
 }
 
-__device__ int score_prefix_match(Address a, uint32_t prefix, int prefix_bytes) {
-    uint32_t masked_a = a.a >> (32 - prefix_bytes * 8);
-    return (masked_a == prefix) ? prefix_bytes : 0;
+__device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 4], int prefix_bytes) {
+    int score = 0;
+    if (prefix_bytes >= 4) {
+        if (a.a == prefix[0]) {
+            score += 4;
+        } else {
+            return 0;
+        }
+    } else {
+        uint32_t masked_a = a.a >> (32 - prefix_bytes * 8);
+        if (masked_a == prefix[0]) {
+            return prefix_bytes;
+        } else {
+            return 0;
+        }
+    }
+    if (prefix_bytes > 4 && score == 4) {
+        uint32_t masked_b = a.b >> (32 - (prefix_bytes - 4) * 8);
+        if (masked_b == prefix[1]) {
+            score += (prefix_bytes - 4);
+        } else {
+            return 0;
+        }
+    }
+    return score;
 }
 
 #ifdef __linux__
@@ -97,7 +120,7 @@ __device__ int score_prefix_match(Address a, uint32_t prefix, int prefix_bytes) 
     #define atomicAdd_ul(a, b) atomicAdd(a, b)
 #endif
 
-__device__ void handle_output(int score_method, Address a, uint64_t key, bool inv, uint32_t prefix = 0, int prefix_bytes = 0) {
+__device__ void handle_output(int score_method, Address a, uint64_t key, bool inv, uint32_t prefix[MAX_PREFIX_BYTES / 4] = nullptr, int prefix_bytes = 0) {
     int score = 0;
     if (score_method == 0) { score = score_leading_zeros(a); }
     else if (score_method == 1) { score = score_zero_bytes(a); }
@@ -116,7 +139,7 @@ __device__ void handle_output(int score_method, Address a, uint64_t key, bool in
     }
 }
 
-__device__ void handle_output2(int score_method, Address a, uint64_t key, uint32_t prefix = 0, int prefix_bytes = 0) {
+__device__ void handle_output2(int score_method, Address a, uint64_t key, uint32_t prefix[MAX_PREFIX_BYTES / 4] = nullptr, int prefix_bytes = 0) {
     int score = 0;
     if (score_method == 0) { score = score_leading_zeros(a); }
     else if (score_method == 1) { score = score_zero_bytes(a); }
@@ -185,7 +208,7 @@ void print_progress_bar(float progress, int bar_width = 50) {
     std::cout << bar;
 }
 
-void host_thread(int device, int device_index, int score_method, int mode, Address origin_address, Address deployer_address, _uint256 bytecode, uint32_t prefix = 0, int prefix_bytes = 0) {
+void host_thread(int device, int device_index, int score_method, int mode, Address origin_address, Address deployer_address, _uint256 bytecode, uint32_t prefix[MAX_PREFIX_BYTES / 4] = nullptr, int prefix_bytes = 0) {
     uint64_t GRID_WORK = ((uint64_t)BLOCK_SIZE * (uint64_t)GRID_SIZE * (uint64_t)THREAD_WORK);
 
     CurvePoint* block_offsets = 0;
@@ -539,7 +562,7 @@ int main(int argc, char *argv[]) {
     char* input_address = 0;
     char* input_deployer_address = 0;
     char* input_prefix = 0;
-    uint32_t prefix = 0;
+    uint32_t prefix[MAX_PREFIX_BYTES / 4] = {0}; // Массив для хранения префикса (до 8 байт)
     int prefix_bytes = 0;
 
     int num_devices = 0;
@@ -613,22 +636,27 @@ int main(int argc, char *argv[]) {
             if ((lower_c >= '0' && lower_c <= '9') || (lower_c >= 'a' && lower_c <= 'f')) {
                 hex_prefix += lower_c;
             } else {
-                // Конвертируем символ в его hex-представление
                 char hex[3];
                 snprintf(hex, sizeof(hex), "%02x", (unsigned char)c);
                 hex_prefix += hex;
             }
         }
-        // Усекаем до 8 символов (4 байта) или дополняем нулями до чётного количества
-        if (hex_prefix.length() > 8) {
-            hex_prefix = hex_prefix.substr(0, 8); // Усекаем до 4 байтов
+        // Усекаем до 16 символов (8 байт) или дополняем нулями до чётного количества
+        if (hex_prefix.length() > 16) {
+            hex_prefix = hex_prefix.substr(0, 16); // Усекаем до 8 байтов
         } else if (hex_prefix.length() % 2 != 0) {
             hex_prefix += "0"; // Дополняем нулём для чётного количества
         }
         prefix_bytes = hex_prefix.length() / 2;
         try {
-            prefix = std::stoul(hex_prefix, nullptr, 16);
-            prefix <<= (4 - prefix_bytes) * 8;
+            // Разбиваем hex-строку на 32-битные куски
+            for (int i = 0; i < prefix_bytes; i += 4) {
+                std::string chunk = hex_prefix.substr(i * 2, 8);
+                if (chunk.length() < 8) {
+                    chunk += std::string(8 - chunk.length(), '0');
+                }
+                prefix[i / 4] = std::stoul(chunk, nullptr, 16);
+            }
         } catch (...) {
             printf("🩸 [ERROR] Invalid hex prefix! Use valid characters or ensure correct format. 🖤\n");
             return 1;
@@ -774,7 +802,7 @@ int main(int argc, char *argv[]) {
     double speeds[100];
     uint64_t iteration_count = 0;
     const uint64_t max_iterations = 10000;
-    printf("🌑 Initiating the Ritual of Lilith... Seeking addresses with prefix 0x%0*x 🖤\n", prefix_bytes * 2, prefix >> (4 - prefix_bytes) * 8);
+    printf("🌑 Initiating the Ritual of Lilith... Seeking addresses with prefix 0x%0*x 🖤\n", prefix_bytes * 2, prefix[0] >> (4 - std::min(4, prefix_bytes)) * 8);
 
     while (true) {
         message_queue_mutex.lock();

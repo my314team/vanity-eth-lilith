@@ -15,12 +15,13 @@
     <https://www.gnu.org/licenses/>.
 */
 
+
 #pragma once
 #include "curve_math.h"
 #include "keccak.h"
 #include "math.h"
 
-__global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_contract_address_work(int score_method, CurvePoint* offsets, uint32_t prefix, int prefix_bytes) {
+__global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_contract_address_work(int score_method, CurvePoint* offsets, uint32_t prefix[MAX_PREFIX_BYTES / 4], int prefix_bytes) {
     bool b = __isGlobal(offsets);
     __builtin_assume(b);
 
