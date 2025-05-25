@@ -20,8 +20,7 @@
 #include "keccak.h"
 #include "math.h"
 
-
-__global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_contract3_address_work(int score_method, Address origin, Address deployer, _uint256 base_key, _uint256 proxy_bytecode) {
+__global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_contract3_address_work(int score_method, Address origin, Address deployer, _uint256 base_key, _uint256 proxy_bytecode, uint32_t prefix, int prefix_bytes) {
     uint64_t thread_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)BLOCK_SIZE;
     uint64_t key_offset = (uint64_t)THREAD_WORK * thread_id;
 
@@ -40,7 +39,7 @@ __global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_contract3_address_work(int 
     for (int i = 0; i < THREAD_WORK; i++) {
         _uint256 salt = calculate_create3_salt(origin, key);
         Address proxy = calculate_contract_address2(deployer, salt, proxy_bytecode);
-        handle_output2(score_method, calculate_contract_address(proxy, 1), key_offset + i);
+        handle_output2(score_method, calculate_contract_address(proxy, 1), key_offset + i, prefix, prefix_bytes);
         key.h += 1;
     }
 }

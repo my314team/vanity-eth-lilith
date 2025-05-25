@@ -15,7 +15,6 @@
     <https://www.gnu.org/licenses/>.
 */
 
-
 #if defined(_WIN64)
     #define WIN32_NO_STATUS
     #include <windows.h>
@@ -32,10 +31,11 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstring>
+#include <algorithm>
 
 #include "secure_rand.h"
 #include "structures.h"
-
 #include "cpu_curve_math.h"
 #include "cpu_keccak.h"
 #include "cpu_math.h"
@@ -84,6 +84,11 @@ __device__ int score_leading_zeros(Address a) {
     return n >> 3;
 }
 
+__device__ int score_prefix_match(Address a, uint32_t prefix, int prefix_bytes) {
+    uint32_t masked_a = a.a >> (32 - prefix_bytes * 8);
+    return (masked_a == prefix) ? prefix_bytes : 0;
+}
+
 #ifdef __linux__
     #define atomicMax_ul(a, b) atomicMax((unsigned long long*)(a), (unsigned long long)(b))
     #define atomicAdd_ul(a, b) atomicAdd((unsigned long long*)(a), (unsigned long long)(b))
@@ -92,10 +97,11 @@ __device__ int score_leading_zeros(Address a) {
     #define atomicAdd_ul(a, b) atomicAdd(a, b)
 #endif
 
-__device__ void handle_output(int score_method, Address a, uint64_t key, bool inv) {
+__device__ void handle_output(int score_method, Address a, uint64_t key, bool inv, uint32_t prefix = 0, int prefix_bytes = 0) {
     int score = 0;
     if (score_method == 0) { score = score_leading_zeros(a); }
     else if (score_method == 1) { score = score_zero_bytes(a); }
+    else if (score_method == 2) { score = score_prefix_match(a, prefix, prefix_bytes); }
 
     if (score >= device_memory[1]) {
         atomicMax_ul(&device_memory[1], score);
@@ -110,10 +116,11 @@ __device__ void handle_output(int score_method, Address a, uint64_t key, bool in
     }
 }
 
-__device__ void handle_output2(int score_method, Address a, uint64_t key) {
+__device__ void handle_output2(int score_method, Address a, uint64_t key, uint32_t prefix = 0, int prefix_bytes = 0) {
     int score = 0;
     if (score_method == 0) { score = score_leading_zeros(a); }
     else if (score_method == 1) { score = score_zero_bytes(a); }
+    else if (score_method == 2) { score = score_prefix_match(a, prefix, prefix_bytes); }
 
     if (score >= device_memory[1]) {
         atomicMax_ul(&device_memory[1], score);
@@ -167,7 +174,6 @@ uint64_t milliseconds() {
     return (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())).count();
 }
 
-// Функция для отображения прогресс-бара
 void print_progress_bar(float progress, int bar_width = 50) {
     int filled = static_cast<int>(progress * bar_width);
     std::string bar;
@@ -179,7 +185,7 @@ void print_progress_bar(float progress, int bar_width = 50) {
     std::cout << bar;
 }
 
-void host_thread(int device, int device_index, int score_method, int mode, Address origin_address, Address deployer_address, _uint256 bytecode) {
+void host_thread(int device, int device_index, int score_method, int mode, Address origin_address, Address deployer_address, _uint256 bytecode, uint32_t prefix = 0, int prefix_bytes = 0) {
     uint64_t GRID_WORK = ((uint64_t)BLOCK_SIZE * (uint64_t)GRID_SIZE * (uint64_t)THREAD_WORK);
 
     CurvePoint* block_offsets = 0;
@@ -203,7 +209,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
     output_buffer3_host = output_buffer2_host + OUTPUT_BUFFER_SIZE;
 
     output_counter_host[0] = 0;
-    max_score_host[0] = 2;
+    max_score_host[0] = (score_method == 2) ? prefix_bytes : 2;
     gpu_assert(cudaMemcpyToSymbol(device_memory, device_memory_host, 2 * sizeof(uint64_t)));
     gpu_assert(cudaDeviceSynchronize())
 
@@ -280,9 +286,9 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
         while (true) {
             if (!first_iteration) {
                 if (mode == 0) {
-                    gpu_address_work<<<GRID_SIZE, BLOCK_SIZE, 0, streams[0]>>>(score_method, offsets);
+                    gpu_address_work<<<GRID_SIZE, BLOCK_SIZE, 0, streams[0]>>>(score_method, offsets, prefix, prefix_bytes);
                 } else {
-                    gpu_contract_address_work<<<GRID_SIZE, BLOCK_SIZE, 0, streams[0]>>>(score_method, offsets);
+                    gpu_contract_address_work<<<GRID_SIZE, BLOCK_SIZE, 0, streams[0]>>>(score_method, offsets, prefix, prefix_bytes);
                 }
             }
 
@@ -382,7 +388,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
     if (mode == 2) {
         while (true) {
             uint64_t start_time = milliseconds();
-            gpu_contract2_address_work<<<GRID_SIZE, BLOCK_SIZE>>>(score_method, origin_address, random_key, bytecode);
+            gpu_contract2_address_work<<<GRID_SIZE, BLOCK_SIZE>>>(score_method, origin_address, random_key, bytecode, prefix, prefix_bytes);
 
             gpu_assert(cudaDeviceSynchronize())
             gpu_assert(cudaMemcpyFromSymbol(device_memory_host, device_memory, (2 + OUTPUT_BUFFER_SIZE * 3) * sizeof(uint64_t)))
@@ -449,7 +455,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
     if (mode == 3) {
         while (true) {
             uint64_t start_time = milliseconds();
-            gpu_contract3_address_work<<<GRID_SIZE, BLOCK_SIZE>>>(score_method, origin_address, deployer_address, random_key, bytecode);
+            gpu_contract3_address_work<<<GRID_SIZE, BLOCK_SIZE>>>(score_method, origin_address, deployer_address, random_key, bytecode, prefix, prefix_bytes);
 
             gpu_assert(cudaDeviceSynchronize())
             gpu_assert(cudaMemcpyFromSymbol(device_memory_host, device_memory, (2 + OUTPUT_BUFFER_SIZE * 3) * sizeof(uint64_t)))
@@ -527,11 +533,14 @@ void print_speeds(int num_devices, int* device_ids, double* speeds) {
 }
 
 int main(int argc, char *argv[]) {
-    int score_method = -1; // 0 = leading zeroes, 1 = zeros
+    int score_method = -1; // 0 = leading zeroes, 1 = zeros, 2 = prefix
     int mode = 0; // 0 = address, 1 = contract, 2 = create2 contract, 3 = create3 proxy contract
     char* input_file = 0;
     char* input_address = 0;
     char* input_deployer_address = 0;
+    char* input_prefix = 0;
+    uint32_t prefix = 0;
+    int prefix_bytes = 0;
 
     int num_devices = 0;
     int device_ids[10];
@@ -546,6 +555,10 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "--zeros") == 0 || strcmp(argv[i], "-z") == 0) {
             score_method = 1;
             i++;
+        } else if (strcmp(argv[i], "--prefix") == 0 || strcmp(argv[i], "-p") == 0) {
+            score_method = 2;
+            input_prefix = argv[i + 1];
+            i += 2;
         } else if (strcmp(argv[i], "--contract") == 0 || strcmp(argv[i], "-c") == 0) {
             mode = 1;
             i++;
@@ -578,8 +591,46 @@ int main(int argc, char *argv[]) {
     }
 
     if (score_method == -1) {
-        printf("🩸 [ERROR] No scoring method chosen! Use --leading-zeros or --zeros. 🖤\n");
+        printf("🩸 [ERROR] No scoring method chosen! Use --leading-zeros, --zeros, or --prefix. 🖤\n");
         return 1;
+    }
+
+    if (score_method == 2 && !input_prefix) {
+        printf("🩸 [ERROR] Prefix required for --prefix! Specify with --prefix <hex>. 🖤\n");
+        return 1;
+    }
+
+    // Парсинг префикса
+    if (score_method == 2) {
+        std::string prefix_str = input_prefix;
+        if (prefix_str.substr(0, 2) == "0x") {
+            prefix_str = prefix_str.substr(2);
+        }
+        // Преобразование leetspeak или ASCII в hex (например, R4M53S)
+        std::string hex_prefix;
+        for (char c : prefix_str) {
+            char lower_c = std::tolower(c);
+            if ((lower_c >= '0' && lower_c <= '9') || (lower_c >= 'a' && lower_c <= 'f')) {
+                hex_prefix += lower_c;
+            } else {
+                // Конвертируем символ в его hex-представление
+                char hex[3];
+                snprintf(hex, sizeof(hex), "%02x", (unsigned char)c);
+                hex_prefix += hex;
+            }
+        }
+        if (hex_prefix.length() % 2 != 0 || hex_prefix.length() > 8) {
+            printf("🩸 [ERROR] Invalid prefix! Must be a hex string of 1-4 bytes (2-8 chars). 🖤\n");
+            return 1;
+        }
+        prefix_bytes = hex_prefix.length() / 2;
+        try {
+            prefix = std::stoul(hex_prefix, nullptr, 16);
+            prefix <<= (4 - prefix_bytes) * 8;
+        } catch (...) {
+            printf("🩸 [ERROR] Invalid hex prefix! Use valid hexadecimal characters. 🖤\n");
+            return 1;
+        }
     }
 
     if (mode == 2 && !input_file) {
@@ -595,7 +646,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if ((mode == 2 || mode == 3) && !input_deployer_address) {
+    if (mode == 3 && !input_deployer_address) {
         printf("🩸 [ERROR] Deployer address required for --contract3! Specify with --deployer-address. 🖤\n");
         return 1;
     }
@@ -714,14 +765,14 @@ int main(int argc, char *argv[]) {
     std::vector<std::thread> threads;
     uint64_t global_start_time = milliseconds();
     for (int i = 0; i < num_devices; i++) {
-        std::thread th(host_thread, device_ids[i], i, score_method, mode, origin_address, deployer_address, bytecode_hash);
-        threads.push_back(move(th));
+        std::thread th(host_thread, device_ids[i], i, score_method, mode, origin_address, deployer_address, bytecode_hash, prefix, prefix_bytes);
+        threads.push_back(std::move(th));
     }
 
     double speeds[100];
     uint64_t iteration_count = 0;
-    const uint64_t max_iterations = 10000; // Примерное максимальное количество итераций для прогресса
-    printf("🌑 Initiating the Ritual of Lilith... Preparing to summon vanity addresses 🖤\n");
+    const uint64_t max_iterations = 10000;
+    printf("🌑 Initiating the Ritual of Lilith... Seeking addresses with prefix 0x%0*x 🖤\n", prefix_bytes * 2, prefix >> (4 - prefix_bytes) * 8);
 
     while (true) {
         message_queue_mutex.lock();
@@ -736,7 +787,6 @@ int main(int argc, char *argv[]) {
                 int device_index = m.device_index;
                 iteration_count++;
 
-                // Обновление прогресс-бара
                 float progress = static_cast<float>(iteration_count) / max_iterations;
                 if (progress > 1.0f) progress = 1.0f;
 
@@ -771,10 +821,10 @@ int main(int argc, char *argv[]) {
                             uint64_t time = (m.time - global_start_time) / 1000;
 
                             if (mode == 0 || mode == 1) {
-                                printf("\n🖤 [FOUND] Elapsed: %06u s | Score: %02u | Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x | Address: 0x%08x%08x%08x%08x%08x 🔥\n",
+                                printf("\n🖤 [FOUND] Elapsed: %06u s | Prefix Match: %d bytes | Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x | Address: 0x%08x%08x%08x%08x%08x 🔥\n",
                                     (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, a.a, a.b, a.c, a.d, a.e);
                             } else if (mode == 2 || mode == 3) {
-                                printf("\n🖤 [FOUND] Elapsed: %06u s | Score: %02u | Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x | Address: 0x%08x%08x%08x%08x%08x 🔥\n",
+                                printf("\n🖤 [FOUND] Elapsed: %06u s | Prefix Match: %d bytes | Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x | Address: 0x%08x%08x%08x%08x%08x 🔥\n",
                                     (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, a.a, a.b, a.c, a.d, a.e);
                             }
                         }
