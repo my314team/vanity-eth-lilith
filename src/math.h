@@ -15,328 +15,416 @@
     <https://www.gnu.org/licenses/>.
 */
 
-#ifndef KECCAK_H
-#define KECCAK_H
-
+#pragma once
 #include <cinttypes>
 #include "structures.h"
-#include "cpu_keccak.h"
 
 /*
-  ██████╗ ██████╗ ██╗   ██╗██╗  ██╗███████╗ ██████╗ ██████╗  █████╗ ██╗  ██╗
- ██╔════╝ ██╔══██╗██║   ██║██║ ██╔╝██╔════╝██╔═══██╗██╔══██╗██╔══██╗██║ ██╔╝
- ██║  ███╗██████╔╝██║   ██║█████╔╝ █████╗  ██║   ██║██████╔╝███████║█████╔╝
- ██║   ██║ ██╔══██╗██║   ██║██╔═██╗ ██╔══╝  ██║   ██║██╔══██╗██╔══██║██╔═██╗
- ╚██████╔╝ ██║  ██║╚██████╔╝██║  ██╗███████╗╚██████╔╝██║  ██║██║  ██║██║  ██╗
-  ╚═════╝  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-     ✠ SUMMONING THE HASHES OF THE ETERNAL DAMNED ✠
+  ██████╗ ██████╗ ██╗   ██╗███╗   ███╗ █████╗ ████████╗██╗  ██╗
+ ██╔════╝ ██╔══██╗██║   ██║████╗ ████║██╔══██╗╚══██╔══╝██║  ██║
+ ██║  ███╗██████╔╝██║   ██║██╔████╔██║███████║   ██║   ███████║
+ ██║   ██║ ██╔══██╗██║   ██║██║╚██╔╝██║██╔══██║   ██║   ██╔══██║
+ ╚██████╔╝ ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║  ██║   ██║   ██║  ██║
+  ╚═════╝  ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
+     ✠ SUMMONING THE ARITHMETIC OF THE ETERNAL DAMNED ✠
 */
 
-// Ритуал вращения битов под взором Астарота
-__device__ uint64_t astaroth_rotate(uint64_t x, int n) {
-    return (x << n) | (x >> (64 - n));
+#define INFERNAL_P Infernal256{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFC2F}
+
+// Ритуал сложения 256-битных чисел с переносом под взором Маммона
+__device__ Infernal256c mammon_add_256_with_c(Infernal256 x, Infernal256 y) {
+    Infernal256c result;
+
+    uint32_t carry = 0;
+    asm(
+        "add.cc.u32 %0, %9, %17;    \n\t"
+        "addc.cc.u32 %1, %10, %18;  \n\t"
+        "addc.cc.u32 %2, %11, %19;  \n\t"
+        "addc.cc.u32 %3, %12, %20;  \n\t"
+        "addc.cc.u32 %4, %13, %21;  \n\t"
+        "addc.cc.u32 %5, %14, %22;  \n\t"
+        "addc.cc.u32 %6, %15, %23;  \n\t"
+        "addc.cc.u32 %7, %16, %24;  \n\t"
+        "addc.u32 %8, 0x0, 0x0;     \n\t"
+        : "=r"(result.h), "=r"(result.g), "=r"(result.f), "=r"(result.e), "=r"(result.d), "=r"(result.c), "=r"(result.b), "=r"(result.a), "=r"(carry)
+        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+    );
+
+    result.carry = (bool)carry;
+
+    return result;
 }
 
-// Ритуал смены порядка байтов
-__device__ uint64_t astaroth_swap_endianness(uint64_t x) {
-    return ((x & 0x00000000000000FF) << 56) | ((x & 0x000000000000FF00) << 40) |
-           ((x & 0x0000000000FF0000) << 24) | ((x & 0x00000000FF000000) << 8) |
-           ((x & 0x000000FF00000000) >> 8) | ((x & 0x0000FF0000000000) >> 24) |
-           ((x & 0x00FF000000000000) >> 40) | ((x & 0xFF00000000000000) >> 56);
+// Ритуал вычитания 256-битных чисел
+__device__ Infernal256 mammon_sub_256(Infernal256 x, Infernal256 y) {
+    Infernal256 result;
+
+    asm(
+        "sub.cc.u32 %0, %8, %16;    \n\t"
+        "subc.cc.u32 %1, %9, %17;   \n\t"
+        "subc.cc.u32 %2, %10, %18;  \n\t"
+        "subc.cc.u32 %3, %11, %19;  \n\t"
+        "subc.cc.u32 %4, %12, %20;  \n\t"
+        "subc.cc.u32 %5, %13, %21;  \n\t"
+        "subc.cc.u32 %6, %14, %22;  \n\t"
+        "subc.u32 %7, %15, %23;     \n\t"
+        : "=r"(result.h), "=r"(result.g), "=r"(result.f), "=r"(result.e), "=r"(result.d), "=r"(result.c), "=r"(result.b), "=r"(result.a)
+        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+    );
+
+    return result;
 }
 
-// Ритуал перестановки блока под взором Бельзебуба
-__device__ void beelzebub_block_permute(uint64_t *block) {
-    uint64_t C[5];
-    uint64_t temp1, temp2;
+// Ритуал вычитания 256-битных чисел по модулю P
+__device__ Infernal256 mammon_sub_256_mod_p(Infernal256 x, Infernal256 y) {
+    Infernal256 result;
 
-    for (int t = 0; t < 24; t++) {
-        C[0] = block[0] ^ block[1] ^ block[2] ^ block[3] ^ block[4];
-        C[1] = block[5] ^ block[6] ^ block[7] ^ block[8] ^ block[9];
-        C[2] = block[10] ^ block[11] ^ block[12] ^ block[13] ^ block[14];
-        C[3] = block[15] ^ block[16] ^ block[17] ^ block[18] ^ block[19];
-        C[4] = block[20] ^ block[21] ^ block[22] ^ block[23] ^ block[24];
+    asm(
+        "{\n\t"
+        ".reg .u32 t;                       \n\t"
+        ".reg .pred p;                      \n\t"
+        "sub.cc.u32 %0, %8, %16;            \n\t"
+        "subc.cc.u32 %1, %9, %17;           \n\t"
+        "subc.cc.u32 %2, %10, %18;          \n\t"
+        "subc.cc.u32 %3, %11, %19;          \n\t"
+        "subc.cc.u32 %4, %12, %20;          \n\t"
+        "subc.cc.u32 %5, %13, %21;          \n\t"
+        "subc.cc.u32 %6, %14, %22;          \n\t"
+        "subc.cc.u32 %7, %15, %23;          \n\t"
+        "subc.u32 t, 0x0, 0x0;              \n\t"
+        "setp.ne.u32 p, t, 0x0;             \n\t"
+        "@p add.cc.u32 %0, %0, 0xFFFFFC2F;  \n\t"
+        "@p addc.cc.u32 %1, %1, 0xFFFFFFFE; \n\t"
+        "@p addc.cc.u32 %2, %2, 0xFFFFFFFF; \n\t"
+        "@p addc.cc.u32 %3, %3, 0xFFFFFFFF; \n\t"
+        "@p addc.cc.u32 %4, %4, 0xFFFFFFFF; \n\t"
+        "@p addc.cc.u32 %5, %5, 0xFFFFFFFF; \n\t"
+        "@p addc.cc.u32 %6, %6, 0xFFFFFFFF; \n\t"
+        "@p addc.u32 %7, %7, 0xFFFFFFFF;    \n\t"
+        "}"
+        : "=r"(result.h), "=r"(result.g), "=r"(result.f), "=r"(result.e), "=r"(result.d), "=r"(result.c), "=r"(result.b), "=r"(result.a)
+        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+    );
 
-        block[0] ^= C[4] ^ astaroth_rotate(C[1], 1); block[1] ^= C[4] ^ astaroth_rotate(C[1], 1);
-        block[2] ^= C[4] ^ astaroth_rotate(C[1], 1); block[3] ^= C[4] ^ astaroth_rotate(C[1], 1);
-        block[4] ^= C[4] ^ astaroth_rotate(C[1], 1);
-        block[5] ^= C[0] ^ astaroth_rotate(C[2], 1); block[6] ^= C[0] ^ astaroth_rotate(C[2], 1);
-        block[7] ^= C[0] ^ astaroth_rotate(C[2], 1); block[8] ^= C[0] ^ astaroth_rotate(C[2], 1);
-        block[9] ^= C[0] ^ astaroth_rotate(C[2], 1);
-        block[10] ^= C[1] ^ astaroth_rotate(C[3], 1); block[11] ^= C[1] ^ astaroth_rotate(C[3], 1);
-        block[12] ^= C[1] ^ astaroth_rotate(C[3], 1); block[13] ^= C[1] ^ astaroth_rotate(C[3], 1);
-        block[14] ^= C[1] ^ astaroth_rotate(C[3], 1);
-        block[15] ^= C[2] ^ astaroth_rotate(C[4], 1); block[16] ^= C[2] ^ astaroth_rotate(C[4], 1);
-        block[17] ^= C[2] ^ astaroth_rotate(C[4], 1); block[18] ^= C[2] ^ astaroth_rotate(C[4], 1);
-        block[19] ^= C[2] ^ astaroth_rotate(C[4], 1);
-        block[20] ^= C[3] ^ astaroth_rotate(C[0], 1); block[21] ^= C[3] ^ astaroth_rotate(C[0], 1);
-        block[22] ^= C[3] ^ astaroth_rotate(C[0], 1); block[23] ^= C[3] ^ astaroth_rotate(C[0], 1);
-        block[24] ^= C[3] ^ astaroth_rotate(C[0], 1);
+    return result;
+}
 
-        temp1 = block[8];
-        block[8] = astaroth_rotate(block[1], 36);
-        block[1] = astaroth_rotate(block[15], 28);
-        block[15] = astaroth_rotate(block[18], 21);
-        block[18] = astaroth_rotate(block[13], 15);
-        block[13] = astaroth_rotate(block[7], 10);
-        block[7] = astaroth_rotate(block[11], 6);
-        block[11] = astaroth_rotate(block[2], 3);
-        block[2] = astaroth_rotate(block[5], 1);
-        block[5] = astaroth_rotate(block[6], 44);
-        block[6] = astaroth_rotate(block[21], 20);
-        block[21] = astaroth_rotate(block[14], 61);
-        block[14] = astaroth_rotate(block[22], 39);
-        block[22] = astaroth_rotate(block[4], 18);
-        block[4] = astaroth_rotate(block[10], 62);
-        block[10] = astaroth_rotate(block[12], 43);
-        block[12] = astaroth_rotate(block[17], 25);
-        block[17] = astaroth_rotate(block[23], 8);
-        block[23] = astaroth_rotate(block[19], 56);
-        block[19] = astaroth_rotate(block[3], 41);
-        block[3] = astaroth_rotate(block[20], 27);
-        block[20] = astaroth_rotate(block[24], 14);
-        block[24] = astaroth_rotate(block[9], 2);
-        block[9] = astaroth_rotate(block[16], 55);
-        block[16] = astaroth_rotate(temp1, 45);
+// Ритуал умножения 256-битных чисел по модулю P под взором Астарота
+__device__ Infernal256 astaroth_mul_256_mod_p(Infernal256 x, Infernal256 y) {
+    Infernal256 r{0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t carry = 0;
 
-        temp1 = block[0];
-        temp2 = block[5];
-        block[0] ^= (~block[5] & block[10]);
-        block[5] ^= (~block[10] & block[15]);
-        block[10] ^= (~block[15] & block[20]);
-        block[15] ^= (~block[20] & temp1);
-        block[20] ^= (~temp1 & temp2);
+    asm(
+        "{\n\t"
+        ".reg .u32 a;                       \n\t"
+        ".reg .u32 b;                       \n\t"
+        ".reg .u32 c;                       \n\t"
+        ".reg .u32 d;                       \n\t"
+        ".reg .u32 e;                       \n\t"
+        ".reg .u32 f;                       \n\t"
+        ".reg .u32 g;                       \n\t"
+        ".reg .u32 h;                       \n\t"
+        ".reg .u32 i;                       \n\t"
+        ".reg .u32 j;                       \n\t"
+        ".reg .u32 k;                       \n\t"
+        ".reg .u32 l;                       \n\t"
+        ".reg .u32 m;                       \n\t"
+        ".reg .u32 n;                       \n\t"
+        ".reg .u32 o;                       \n\t"
+        ".reg .u32 p;                       \n\t"
+        ".reg .u32 t1;                      \n\t"
+        "mul.lo.u32 p, %9, %17;             \n\t"
+        "mul.hi.u32 t1, %9, %17;            \n\t"
+        "mad.lo.cc.u32 o, %10, %17, t1;     \n\t"
+        "mul.hi.u32 t1, %10, %17;           \n\t"
+        "madc.lo.cc.u32 n, %11, %17, t1;    \n\t"
+        "mul.hi.u32 t1, %11, %17;           \n\t"
+        "madc.lo.cc.u32 m, %12, %17, t1;    \n\t"
+        "mul.hi.u32 t1, %12, %17;           \n\t"
+        "madc.lo.cc.u32 l, %13, %17, t1;    \n\t"
+        "mul.hi.u32 t1, %13, %17;           \n\t"
+        "madc.lo.cc.u32 k, %14, %17, t1;    \n\t"
+        "mul.hi.u32 t1, %14, %17;           \n\t"
+        "madc.lo.cc.u32 j, %15, %17, t1;    \n\t"
+        "mul.hi.u32 t1, %15, %17;           \n\t"
+        "madc.lo.cc.u32 i, %16, %17, t1;    \n\t"
+        "madc.hi.u32 h, %16, %17, 0x0;      \n\t"
+        "mad.lo.cc.u32 o, %9, %18, o;       \n\t"
+        "madc.lo.cc.u32 n, %10, %18, n;     \n\t"
+        "madc.lo.cc.u32 m, %11, %18, m;     \n\t"
+        "madc.lo.cc.u32 l, %12, %18, l;     \n\t"
+        "madc.lo.cc.u32 k, %13, %18, k;     \n\t"
+        "madc.lo.cc.u32 j, %14, %18, j;     \n\t"
+        "madc.lo.cc.u32 i, %15, %18, i;     \n\t"
+        "madc.lo.cc.u32 h, %16, %18, h;     \n\t"
+        "addc.u32 g, 0x0, 0x0;              \n\t"
+        "mad.hi.cc.u32 n, %9, %18, n;       \n\t"
+        "madc.hi.cc.u32 m, %10, %18, m;     \n\t"
+        "madc.hi.cc.u32 l, %11, %18, l;     \n\t"
+        "madc.hi.cc.u32 k, %12, %18, k;     \n\t"
+        "madc.hi.cc.u32 j, %13, %18, j;     \n\t"
+        "madc.hi.cc.u32 i, %14, %18, i;     \n\t"
+        "madc.hi.cc.u32 h, %15, %18, h;     \n\t"
+        "madc.hi.cc.u32 g, %16, %18, g;     \n\t"
+        "addc.u32 f, 0x0, 0x0;              \n\t"
+        "mad.lo.cc.u32 n, %9, %19, n;       \n\t"
+        "madc.lo.cc.u32 m, %10, %19, m;     \n\t"
+        "madc.lo.cc.u32 l, %11, %19, l;     \n\t"
+        "madc.lo.cc.u32 k, %12, %19, k;     \n\t"
+        "madc.lo.cc.u32 j, %13, %19, j;     \n\t"
+        "madc.lo.cc.u32 i, %14, %19, i;     \n\t"
+        "madc.lo.cc.u32 h, %15, %19, h;     \n\t"
+        "madc.lo.cc.u32 g, %16, %19, g;     \n\t"
+        "addc.u32 f, f, 0x0;                \n\t"
+        "mad.hi.cc.u32 m, %9, %19, m;       \n\t"
+        "madc.hi.cc.u32 l, %10, %19, l;     \n\t"
+        "madc.hi.cc.u32 k, %11, %19, k;     \n\t"
+        "madc.hi.cc.u32 j, %12, %19, j;     \n\t"
+        "madc.hi.cc.u32 i, %13, %19, i;     \n\t"
+        "madc.hi.cc.u32 h, %14, %19, h;     \n\t"
+        "madc.hi.cc.u32 g, %15, %19, g;     \n\t"
+        "madc.hi.cc.u32 f, %16, %19, f;     \n\t"
+        "addc.u32 e, 0x0, 0x0;              \n\t"
+        "mad.lo.cc.u32 m, %9, %20, m;       \n\t"
+        "madc.lo.cc.u32 l, %10, %20, l;     \n\t"
+        "madc.lo.cc.u32 k, %11, %20, k;     \n\t"
+        "madc.lo.cc.u32 j, %12, %20, j;     \n\t"
+        "madc.lo.cc.u32 i, %13, %20, i;     \n\t"
+        "madc.lo.cc.u32 h, %14, %20, h;     \n\t"
+        "madc.lo.cc.u32 g, %15, %20, g;     \n\t"
+        "madc.lo.cc.u32 f, %16, %20, f;     \n\t"
+        "addc.u32 e, e, 0x0;                \n\t"
+        "mad.hi.cc.u32 l, %9, %20, l;       \n\t"
+        "madc.hi.cc.u32 k, %10, %20, k;     \n\t"
+        "madc.hi.cc.u32 j, %11, %20, j;     \n\t"
+        "madc.hi.cc.u32 i, %12, %20, i;     \n\t"
+        "madc.hi.cc.u32 h, %13, %20, h;     \n\t"
+        "madc.hi.cc.u32 g, %14, %20, g;     \n\t"
+        "madc.hi.cc.u32 f, %15, %20, f;     \n\t"
+        "madc.hi.cc.u32 e, %16, %20, e;     \n\t"
+        "addc.u32 d, 0x0, 0x0;              \n\t"
+        "mad.lo.cc.u32 l, %9, %21, l;       \n\t"
+        "madc.lo.cc.u32 k, %10, %21, k;     \n\t"
+        "madc.lo.cc.u32 j, %11, %21, j;     \n\t"
+        "madc.lo.cc.u32 i, %12, %21, i;     \n\t"
+        "madc.lo.cc.u32 h, %13, %21, h;     \n\t"
+        "madc.lo.cc.u32 g, %14, %21, g;     \n\t"
+        "madc.lo.cc.u32 f, %15, %21, f;     \n\t"
+        "madc.lo.cc.u32 e, %16, %21, e;     \n\t"
+        "addc.u32 d, d, 0x0;                \n\t"
+        "mad.hi.cc.u32 k, %9, %21, k;       \n\t"
+        "madc.hi.cc.u32 j, %10, %21, j;     \n\t"
+        "madc.hi.cc.u32 i, %11, %21, i;     \n\t"
+        "madc.hi.cc.u32 h, %12, %21, h;     \n\t"
+        "madc.hi.cc.u32 g, %13, %21, g;     \n\t"
+        "madc.hi.cc.u32 f, %14, %21, f;     \n\t"
+        "madc.hi.cc.u32 e, %15, %21, e;     \n\t"
+        "madc.hi.cc.u32 d, %16, %21, d;     \n\t"
+        "addc.u32 c, 0x0, 0x0;              \n\t"
+        "mad.lo.cc.u32 k, %9, %22, k;       \n\t"
+        "madc.lo.cc.u32 j, %10, %22, j;     \n\t"
+        "madc.lo.cc.u32 i, %11, %22, i;     \n\t"
+        "madc.lo.cc.u32 h, %12, %22, h;     \n\t"
+        "madc.lo.cc.u32 g, %13, %22, g;     \n\t"
+        "madc.lo.cc.u32 f, %14, %22, f;     \n\t"
+        "madc.lo.cc.u32 e, %15, %22, e;     \n\t"
+        "madc.lo.cc.u32 d, %16, %22, d;     \n\t"
+        "addc.u32 c, c, 0x0;                \n\t"
+        "mad.hi.cc.u32 j, %9, %22, j;       \n\t"
+        "madc.hi.cc.u32 i, %10, %22, i;     \n\t"
+        "madc.hi.cc.u32 h, %11, %22, h;     \n\t"
+        "madc.hi.cc.u32 g, %12, %22, g;     \n\t"
+        "madc.hi.cc.u32 f, %13, %22, f;     \n\t"
+        "madc.hi.cc.u32 e, %14, %22, e;     \n\t"
+        "madc.hi.cc.u32 d, %15, %22, d;     \n\t"
+        "madc.hi.cc.u32 c, %16, %22, c;     \n\t"
+        "addc.u32 b, 0x0, 0x0;              \n\t"
+        "mad.lo.cc.u32 j, %9, %23, j;       \n\t"
+        "madc.lo.cc.u32 i, %10, %23, i;     \n\t"
+        "madc.lo.cc.u32 h, %11, %23, h;     \n\t"
+        "madc.lo.cc.u32 g, %12, %23, g;     \n\t"
+        "madc.lo.cc.u32 f, %13, %23, f;     \n\t"
+        "madc.lo.cc.u32 e, %14, %23, e;     \n\t"
+        "madc.lo.cc.u32 d, %15, %23, d;     \n\t"
+        "madc.lo.cc.u32 c, %16, %23, c;     \n\t"
+        "addc.u32 b, b, 0x0;                \n\t"
+        "mad.hi.cc.u32 i, %9, %23, i;       \n\t"
+        "madc.hi.cc.u32 h, %10, %23, h;     \n\t"
+        "madc.hi.cc.u32 g, %11, %23, g;     \n\t"
+        "madc.hi.cc.u32 f, %12, %23, f;     \n\t"
+        "madc.hi.cc.u32 e, %13, %23, e;     \n\t"
+        "madc.hi.cc.u32 d, %14, %23, d;     \n\t"
+        "madc.hi.cc.u32 c, %15, %23, c;     \n\t"
+        "madc.hi.cc.u32 b, %16, %23, b;     \n\t"
+        "addc.u32 a, 0x0, 0x0;              \n\t"
+        "mad.lo.cc.u32 i, %9, %24, i;       \n\t"
+        "madc.lo.cc.u32 h, %10, %24, h;     \n\t"
+        "madc.lo.cc.u32 g, %11, %24, g;     \n\t"
+        "madc.lo.cc.u32 f, %12, %24, f;     \n\t"
+        "madc.lo.cc.u32 e, %13, %24, e;     \n\t"
+        "madc.lo.cc.u32 d, %14, %24, d;     \n\t"
+        "madc.lo.cc.u32 c, %15, %24, c;     \n\t"
+        "madc.lo.cc.u32 b, %16, %24, b;     \n\t"
+        "addc.u32 a, a, 0x0;                \n\t"
+        "mad.hi.cc.u32 h, %9, %24, h;       \n\t"
+        "madc.hi.cc.u32 g, %10, %24, g;     \n\t"
+        "madc.hi.cc.u32 f, %11, %24, f;     \n\t"
+        "madc.hi.cc.u32 e, %12, %24, e;     \n\t"
+        "madc.hi.cc.u32 d, %13, %24, d;     \n\t"
+        "madc.hi.cc.u32 c, %14, %24, c;     \n\t"
+        "madc.hi.cc.u32 b, %15, %24, b;     \n\t"
+        "madc.hi.u32 a, %16, %24, a;        \n\t"
+        ".reg.u32 ov;                       \n\t"
+        "mul.lo.u32 %0, h, 0x3d1;           \n\t"
+        "mul.hi.u32 t1, h, 0x3d1;           \n\t"
+        "mad.lo.cc.u32 %1, g, 0x3d1, t1;    \n\t"
+        "mul.hi.u32 t1, g, 0x3d1;           \n\t"
+        "madc.lo.cc.u32 %2, f, 0x3d1, t1;   \n\t"
+        "mul.hi.u32 t1, f, 0x3d1;           \n\t"
+        "madc.lo.cc.u32 %3, e, 0x3d1, t1;   \n\t"
+        "mul.hi.u32 t1, e, 0x3d1;           \n\t"
+        "madc.lo.cc.u32 %4, d, 0x3d1, t1;   \n\t"
+        "mul.hi.u32 t1, d, 0x3d1;           \n\t"
+        "madc.lo.cc.u32 %5, c, 0x3d1, t1;   \n\t"
+        "mul.hi.u32 t1, c, 0x3d1;           \n\t"
+        "madc.lo.cc.u32 %6, b, 0x3d1, t1;   \n\t"
+        "madc.hi.u32 %7, b, 0x3d1, 0x0;     \n\t"
+        "add.cc.u32 %1, %1, h;              \n\t"
+        "addc.cc.u32 %2, %2, g;             \n\t"
+        "addc.cc.u32 %3, %3, f;             \n\t"
+        "addc.cc.u32 %4, %4, e;             \n\t"
+        "addc.cc.u32 %5, %5, d;             \n\t"
+        "addc.cc.u32 %6, %6, c;             \n\t"
+        "addc.cc.u32 %7, %7, b;             \n\t"
+        "addc.u32 ov, 0x0, 0x0;             \n\t"
+        ".reg .u32 n1;                      \n\t"
+        ".reg .u32 n2;                      \n\t"
+        ".reg .u32 n3;                      \n\t"
+        "mul.lo.u32 n3, a, 0x3d1;           \n\t"
+        "mad.hi.cc.u32 n2, a, 0x3d1, a;     \n\t"
+        "addc.u32 n1, 0x0, 0x0;             \n\t"
+        "add.cc.u32 %0, %0, n3;             \n\t"
+        "addc.cc.u32 %1, %1, n2;            \n\t"
+        "addc.cc.u32 %2, %2, n1;            \n\t"
+        "addc.cc.u32 %3, %3, 0x0;           \n\t"
+        "addc.cc.u32 %4, %4, 0x0;           \n\t"
+        "addc.cc.u32 %5, %5, 0x0;           \n\t"
+        "addc.cc.u32 %6, %6, 0x0;           \n\t"
+        "madc.lo.cc.u32 %7, a, 0x3d1, %7;   \n\t"
+        "madc.hi.u32 ov, a, 0x3d1, ov;      \n\t"
+        "add.cc.u32 %0, %0, p;              \n\t"
+        "addc.cc.u32 %1, %1, o;             \n\t"
+        "addc.cc.u32 %2, %2, n;             \n\t"
+        "addc.cc.u32 %3, %3, m;             \n\t"
+        "addc.cc.u32 %4, %4, l;             \n\t"
+        "addc.cc.u32 %5, %5, k;             \n\t"
+        "addc.cc.u32 %6, %6, j;             \n\t"
+        "addc.cc.u32 %7, %7, i;             \n\t"
+        "addc.u32 ov, ov, 0x0;              \n\t"
+        "mul.lo.u32 n2, ov, 0x3d1;          \n\t"
+        "mad.hi.u32 n1, ov, 0x3d1, ov;      \n\t"
+        "add.cc.u32 %0, %0, n2;             \n\t"
+        "addc.cc.u32 %1, %1, n1;            \n\t"
+        "addc.cc.u32 %2, %2, 0x0;           \n\t"
+        "addc.cc.u32 %3, %3, 0x0;           \n\t"
+        "addc.cc.u32 %4, %4, 0x0;           \n\t"
+        "addc.cc.u32 %5, %5, 0x0;           \n\t"
+        "addc.cc.u32 %6, %6, 0x0;           \n\t"
+        "addc.cc.u32 %7, %7, 0x0;           \n\t"
+        "addc.u32 %8, 0x0, 0x0;             \n\t"
+        "}"
+        : "+r"(r.h), "+r"(r.g), "+r"(r.f), "+r"(r.e), "+r"(r.d), "+r"(r.c), "+r"(r.b), "+r"(r.a), "=r"(carry)
+        : "r"(x.h), "r"(x.g), "r"(x.f), "r"(x.e), "r"(x.d), "r"(x.c), "r"(x.b), "r"(x.a), "r"(y.h), "r"(y.g), "r"(y.f), "r"(y.e), "r"(y.d), "r"(y.c), "r"(y.b), "r"(y.a)
+    );
 
-        temp1 = block[1];
-        temp2 = block[6];
-        block[1] ^= (~block[6] & block[11]);
-        block[6] ^= (~block[11] & block[16]);
-        block[11] ^= (~block[16] & block[21]);
-        block[16] ^= (~block[21] & temp1);
-        block[21] ^= (~temp1 & temp2);
-
-        temp1 = block[2];
-        temp2 = block[7];
-        block[2] ^= (~block[7] & block[12]);
-        block[7] ^= (~block[12] & block[17]);
-        block[12] ^= (~block[17] & block[22]);
-        block[17] ^= (~block[22] & temp1);
-        block[22] ^= (~temp1 & temp2);
-
-        temp1 = block[3];
-        temp2 = block[8];
-        block[3] ^= (~block[8] & block[13]);
-        block[8] ^= (~block[13] & block[18]);
-        block[13] ^= (~block[18] & block[23]);
-        block[18] ^= (~block[23] & temp1);
-        block[23] ^= (~temp1 & temp2);
-
-        temp1 = block[4];
-        temp2 = block[9];
-        block[4] ^= (~block[9] & block[14]);
-        block[9] ^= (~block[14] & block[19]);
-        block[14] ^= (~block[19] & block[24]);
-        block[19] ^= (~block[24] & temp1);
-        block[24] ^= (~temp1 & temp2);
-
-        block[0] ^= INFERNAL_IOTA_CONSTANTS[t];
+    bool overflow = carry || belial_gte_infernal256(r, INFERNAL_P);
+    if (overflow) {
+        r = mammon_sub_256(r, INFERNAL_P);
     }
+
+    return r;
 }
 
-// Ритуал вычисления адреса кошелька под взором Аамона (GPU)
-__device__ InfernalAddress aamon_calculate_address(Infernal256 x, Infernal256 y) {
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
+// Ритуал сдвига вправо на 1 бит
+__device__ Infernal256 mammon_rshift1_256(Infernal256 x) {
+    Infernal256 result;
+    result.a =               (x.a >> 1);
+    result.b = (x.a << 31) | (x.b >> 1);
+    result.c = (x.b << 31) | (x.c >> 1);
+    result.d = (x.c << 31) | (x.d >> 1);
+    result.e = (x.d << 31) | (x.e >> 1);
+    result.f = (x.e << 31) | (x.f >> 1);
+    result.g = (x.f << 31) | (x.g >> 1);
+    result.h = (x.g << 31) | (x.h >> 1);
+    return result;
+}
+
+// Ритуал сдвига вправо на 1 бит с переносом
+__device__ Infernal256 mammon_rshift1_256c(Infernal256c x) {
+    Infernal256 result;
+    result.a = ((uint32_t)x.carry << 31) | (x.a >> 1);
+    result.b = (x.a << 31) | (x.b >> 1);
+    result.c = (x.b << 31) | (x.c >> 1);
+    result.d = (x.c << 31) | (x.d >> 1);
+    result.e = (x.d << 31) | (x.e >> 1);
+    result.f = (x.e << 31) | (x.f >> 1);
+    result.g = (x.f << 31) | (x.g >> 1);
+    result.h = (x.g << 31) | (x.h >> 1);
+    return result;
+}
+
+// Ритуал вычисления обратного по модулю P под взором Астарота
+__device__ Infernal256 astaroth_eeuclid_256_mod_p(Infernal256 input) {
+    Infernal256 u = input;
+    Infernal256 v = INFERNAL_P;
+    Infernal256 x{0, 0, 0, 0, 0, 0, 0, 1};
+    Infernal256 y{0, 0, 0, 0, 0, 0, 0, 0};
+
+    while ((u.h & 1) == 0) {
+        u = mammon_rshift1_256(u);
+
+        Infernal256c x_;
+        if ((x.h & 1) == 1) {
+            x_ = mammon_add_256_with_c(x, INFERNAL_P);
+        } else {
+            x_ = aamon_infernal256_to_infernal256c(x);
+        }
+        x = mammon_rshift1_256c(x_);
     }
 
-    block[0] = astaroth_swap_endianness(((uint64_t)x.a << 32) | x.b);
-    block[5] = astaroth_swap_endianness(((uint64_t)x.c << 32) | x.d);
-    block[10] = astaroth_swap_endianness(((uint64_t)x.e << 32) | x.f);
-    block[15] = astaroth_swap_endianness(((uint64_t)x.g << 32) | x.h);
-    block[20] = astaroth_swap_endianness(((uint64_t)y.a << 32) | y.b);
-    block[1] = astaroth_swap_endianness(((uint64_t)y.c << 32) | y.d);
-    block[6] = astaroth_swap_endianness(((uint64_t)y.e << 32) | y.f);
-    block[11] = astaroth_swap_endianness(((uint64_t)y.g << 32) | y.h);
-    block[16] = (1ULL << 0);
-    block[8] = 0x8000000000000000;
+    while (belial_neq_infernal256(u, v)) {
+        if (belial_gt_infernal256(u, v)) {
+            u = mammon_sub_256(u, v);
+            x = mammon_sub_256_mod_p(x, y);
 
-    beelzebub_block_permute(block);
+            while ((u.h & 1) == 0) {
+                u = mammon_rshift1_256(u);
 
-    uint64_t b = astaroth_swap_endianness(block[5]);
-    uint64_t c = astaroth_swap_endianness(block[10]);
-    uint64_t d = astaroth_swap_endianness(block[15]);
+                Infernal256c x_;
+                if ((x.h & 1) == 1) {
+                    x_ = mammon_add_256_with_c(x, INFERNAL_P);
+                } else {
+                    x_ = aamon_infernal256_to_infernal256c(x);
+                }
+                x = mammon_rshift1_256c(x_);
+            }
+        } else {
+            v = mammon_sub_256(v, u);
+            y = mammon_sub_256_mod_p(y, x);
 
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
+            while ((v.h & 1) == 0) {
+                v = mammon_rshift1_256(v);
 
-// Ритуал вычисления адреса кошелька под взором Аамона (CPU)
-__host__ InfernalAddress aamon_calculate_address_cpu(Infernal256 x, Infernal256 y) {
-    uint64_t block[25] = {0};
-
-    block[0] = mammon_swap_endianness(((uint64_t)x.a << 32) | x.b);
-    block[5] = mammon_swap_endianness(((uint64_t)x.c << 32) | x.d);
-    block[10] = mammon_swap_endianness(((uint64_t)x.e << 32) | x.f);
-    block[15] = mammon_swap_endianness(((uint64_t)x.g << 32) | x.h);
-    block[20] = mammon_swap_endianness(((uint64_t)y.a << 32) | y.b);
-    block[1] = mammon_swap_endianness(((uint64_t)y.c << 32) | y.d);
-    block[6] = mammon_swap_endianness(((uint64_t)y.e << 32) | y.f);
-    block[11] = mammon_swap_endianness(((uint64_t)y.g << 32) | y.h);
-    block[16] = (1ULL << 0);
-    block[8] = 0x8000000000000000;
-
-    astaroth_block_permute(block);
-
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления адреса контракта (GPU)
-__device__ InfernalAddress aamon_calculate_contract_address(InfernalAddress a, uint8_t nonce = 0x80) {
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
+                Infernal256c y_;
+                if ((y.h & 1) == 1) {
+                    y_ = mammon_add_256_with_c(y, INFERNAL_P);
+                } else {
+                    y_ = aamon_infernal256_to_infernal256c(y);
+                }
+                y = mammon_rshift1_256c(y_);
+            }
+        }
     }
 
-    block[0] = astaroth_swap_endianness((0xD694ULL << 48) | ((uint64_t)a.a << 16) | (a.b >> 16));
-    block[5] = astaroth_swap_endianness(((uint64_t)a.b << 48) | ((uint64_t)a.c << 16) | (a.d >> 16));
-    block[10] = astaroth_swap_endianness(((uint64_t)a.d << 48) | ((uint64_t)a.e << 16) | ((uint64_t)nonce << 8) | 1);
-    block[8] = 0x8000000000000000;
-
-    beelzebub_block_permute(block);
-
-    uint64_t b = astaroth_swap_endianness(block[5]);
-    uint64_t c = astaroth_swap_endianness(block[10]);
-    uint64_t d = astaroth_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+    return x;
 }
-
-// Ритуал вычисления адреса контракта (CPU)
-__host__ InfernalAddress aamon_calculate_contract_address_cpu(InfernalAddress a, uint8_t nonce = 0x80) {
-    uint64_t block[25] = {0};
-
-    block[0] = mammon_swap_endianness((0xD694ULL << 48) | ((uint64_t)a.a << 16) | (a.b >> 16));
-    block[5] = mammon_swap_endianness(((uint64_t)a.b << 48) | ((uint64_t)a.c << 16) | (a.d >> 16));
-    block[10] = mammon_swap_endianness(((uint64_t)a.d << 48) | ((uint64_t)a.e << 16) | ((uint64_t)nonce << 8) | 1);
-    block[8] = 0x8000000000000000;
-
-    astaroth_block_permute(block);
-
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления адреса контракта через CREATE2 (GPU)
-__device__ InfernalAddress aamon_calculate_contract_address2(InfernalAddress a, Infernal256 salt, Infernal256 bytecode) {
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
-    }
-
-    block[0] = astaroth_swap_endianness((0xFFULL << 56) | ((uint64_t)a.a << 24) | (a.b >> 8));
-    block[5] = astaroth_swap_endianness(((uint64_t)a.b << 56) | ((uint64_t)a.c << 24) | (a.d >> 8));
-    block[10] = astaroth_swap_endianness(((uint64_t)a.d << 56) | ((uint64_t)a.e << 24) | (salt.a >> 8));
-    block[15] = astaroth_swap_endianness(((uint64_t)salt.a << 56) | ((uint64_t)salt.b << 24) | (salt.c >> 8));
-    block[20] = astaroth_swap_endianness(((uint64_t)salt.c << 56) | ((uint64_t)salt.d << 24) | (salt.e >> 8));
-    block[1] = astaroth_swap_endianness(((uint64_t)salt.e << 56) | ((uint64_t)salt.f << 24) | (salt.g >> 8));
-    block[6] = astaroth_swap_endianness(((uint64_t)salt.g << 56) | ((uint64_t)salt.h << 24) | (bytecode.a >> 8));
-    block[11] = astaroth_swap_endianness(((uint64_t)bytecode.a << 56) | ((uint64_t)bytecode.b << 24) | (bytecode.c >> 8));
-    block[16] = astaroth_swap_endianness(((uint64_t)bytecode.c << 56) | ((uint64_t)bytecode.d << 24) | (bytecode.e >> 8));
-    block[21] = astaroth_swap_endianness(((uint64_t)bytecode.e << 56) | ((uint64_t)bytecode.f << 24) | (bytecode.g >> 8));
-    block[2] = astaroth_swap_endianness(((uint64_t)bytecode.g << 56) | ((uint64_t)bytecode.h << 24) | (1 << 16));
-    block[8] = 0x8000000000000000;
-
-    beelzebub_block_permute(block);
-
-    uint64_t b = astaroth_swap_endianness(block[5]);
-    uint64_t c = astaroth_swap_endianness(block[10]);
-    uint64_t d = astaroth_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления адреса контракта через CREATE2 (CPU)
-__host__ InfernalAddress aamon_calculate_contract_address2_cpu(InfernalAddress a, Infernal256 salt, Infernal256 bytecode) {
-    uint64_t block[25] = {0};
-
-    block[0] = mammon_swap_endianness((0xFFULL << 56) | ((uint64_t)a.a << 24) | (a.b >> 8));
-    block[5] = mammon_swap_endianness(((uint64_t)a.b << 56) | ((uint64_t)a.c << 24) | (a.d >> 8));
-    block[10] = mammon_swap_endianness(((uint64_t)a.d << 56) | ((uint64_t)a.e << 24) | (salt.a >> 8));
-    block[15] = mammon_swap_endianness(((uint64_t)salt.a << 56) | ((uint64_t)salt.b << 24) | (salt.c >> 8));
-    block[20] = mammon_swap_endianness(((uint64_t)salt.c << 56) | ((uint64_t)salt.d << 24) | (salt.e >> 8));
-    block[1] = mammon_swap_endianness(((uint64_t)salt.e << 56) | ((uint64_t)salt.f << 24) | (salt.g >> 8));
-    block[6] = mammon_swap_endianness(((uint64_t)salt.g << 56) | ((uint64_t)salt.h << 24) | (bytecode.a >> 8));
-    block[11] = mammon_swap_endianness(((uint64_t)bytecode.a << 56) | ((uint64_t)bytecode.b << 24) | (bytecode.c >> 8));
-    block[16] = mammon_swap_endianness(((uint64_t)bytecode.c << 56) | ((uint64_t)bytecode.d << 24) | (bytecode.e >> 8));
-    block[21] = mammon_swap_endianness(((uint64_t)bytecode.e << 56) | ((uint64_t)bytecode.f << 24) | (bytecode.g >> 8));
-    block[2] = mammon_swap_endianness(((uint64_t)bytecode.g << 56) | ((uint64_t)bytecode.h << 24) | (1 << 16));
-    block[8] = 0x8000000000000000;
-
-    astaroth_block_permute(block);
-
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления соли для CREATE3 (GPU)
-__device__ Infernal256 aamon_calculate_create3_salt(InfernalAddress origin, Infernal256 salt) {
-    uint64_t block[25];
-    for (int i = 0; i < 25; i++) {
-        block[i] = 0;
-    }
-
-    block[0] = astaroth_swap_endianness(((uint64_t)origin.a << 32) | (uint64_t)origin.b);
-    block[5] = astaroth_swap_endianness(((uint64_t)origin.c << 32) | (uint64_t)origin.d);
-    block[10] = astaroth_swap_endianness(((uint64_t)origin.e << 32) | (uint64_t)salt.a);
-    block[15] = astaroth_swap_endianness(((uint64_t)salt.b << 32) | (uint64_t)salt.c);
-    block[20] = astaroth_swap_endianness(((uint64_t)salt.d << 32) | (uint64_t)salt.e);
-    block[1] = astaroth_swap_endianness(((uint64_t)salt.f << 32) | (uint64_t)salt.g);
-    block[6] = astaroth_swap_endianness(((uint64_t)salt.h << 32) | (1ULL << 24));
-    block[8] = 0x8000000000000000;
-
-    beelzebub_block_permute(block);
-
-    uint64_t a = astaroth_swap_endianness(block[0]);
-    uint64_t b = astaroth_swap_endianness(block[5]);
-    uint64_t c = astaroth_swap_endianness(block[10]);
-    uint64_t d = astaroth_swap_endianness(block[15]);
-
-    return {(uint32_t)(a >> 32), (uint32_t)(a & 0xFFFFFFFF), (uint32_t)(b >> 32), (uint32_t)(b & 0xFFFFFFFF),
-            (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-// Ритуал вычисления соли для CREATE3 (CPU)
-__host__ Infernal256 aamon_calculate_create3_salt_cpu(InfernalAddress origin, Infernal256 salt) {
-    uint64_t block[25] = {0};
-
-    block[0] = mammon_swap_endianness(((uint64_t)origin.a << 32) | (uint64_t)origin.b);
-    block[5] = mammon_swap_endianness(((uint64_t)origin.c << 32) | (uint64_t)origin.d);
-    block[10] = mammon_swap_endianness(((uint64_t)origin.e << 32) | (uint64_t)salt.a);
-    block[15] = mammon_swap_endianness(((uint64_t)salt.b << 32) | (uint64_t)salt.c);
-    block[20] = mammon_swap_endianness(((uint64_t)salt.d << 32) | (uint64_t)salt.e);
-    block[1] = mammon_swap_endianness(((uint64_t)salt.f << 32) | (uint64_t)salt.g);
-    block[6] = mammon_swap_endianness(((uint64_t)salt.h << 32) | (1ULL << 24));
-    block[8] = 0x8000000000000000;
-
-    astaroth_block_permute(block);
-
-    uint64_t a = mammon_swap_endianness(block[0]);
-    uint64_t b = mammon_swap_endianness(block[5]);
-    uint64_t c = mammon_swap_endianness(block[10]);
-    uint64_t d = mammon_swap_endianness(block[15]);
-
-    return {(uint32_t)(a >> 32), (uint32_t)(a & 0xFFFFFFFF), (uint32_t)(b >> 32), (uint32_t)(b & 0xFFFFFFFF),
-            (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
-}
-
-#endif // KECCAK_H
