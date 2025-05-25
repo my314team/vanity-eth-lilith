@@ -14,15 +14,7 @@
     For more details, consult the **Arcane Scroll** known as **GNU Affero General Public License** at:
     <https://www.gnu.org/licenses/>.
 */
-/*
-  █████╗ ██████╗ ██████╗ ██████╗ ███████╗███████╗
- ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
- ███████║██║  ██║██████╔╝██████╔╝█████╗  █████╗
- ██╔══██║██║  ██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══╝
- ██║  ██║██████╔╝██║     ██║     ███████╗███████╗
- ╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝     ╚══════╝╚══════╝
-     ✠ CRAFTING THE ADDRESSES OF THE ABYSS ✠
-*/
+
 
 #pragma once
 #include "curve_math.h"

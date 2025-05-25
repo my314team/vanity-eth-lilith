@@ -15,6 +15,7 @@
     <https://www.gnu.org/licenses/>.
 */
 
+
 #if defined(_WIN64)
     #define WIN32_NO_STATUS
     #include <windows.h>
@@ -43,7 +44,7 @@
 #define OUTPUT_BUFFER_SIZE 10000
 #define BLOCK_SIZE 256U
 #define THREAD_WORK (1U << 8)
-#define MAX_PREFIX_BYTES 8 // Максимальная длина префикса в байтах (16 hex-символов)
+#define MAX_PREFIX_BYTES 20 // Максимальная длина префикса в байтах (40 hex-символов)
 
 __constant__ CurvePoint thread_offsets[BLOCK_SIZE];
 __constant__ CurvePoint addends[THREAD_WORK - 1];
@@ -87,6 +88,7 @@ __device__ int score_leading_zeros(Address a) {
 
 __device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 4], int prefix_bytes) {
     int score = 0;
+    // Сравниваем поле a (первые 4 байта)
     if (prefix_bytes >= 4) {
         if (a.a == prefix[0]) {
             score += 4;
@@ -101,12 +103,64 @@ __device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 
             return 0;
         }
     }
+    // Сравниваем поле b (следующие 4 байта)
     if (prefix_bytes > 4 && score == 4) {
-        uint32_t masked_b = a.b >> (32 - (prefix_bytes - 4) * 8);
-        if (masked_b == prefix[1]) {
-            score += (prefix_bytes - 4);
+        if (prefix_bytes >= 8) {
+            if (a.b == prefix[1]) {
+                score += 4;
+            } else {
+                return score;
+            }
         } else {
-            return 0;
+            uint32_t masked_b = a.b >> (32 - (prefix_bytes - 4) * 8);
+            if (masked_b == prefix[1]) {
+                score += (prefix_bytes - 4);
+            } else {
+                return score;
+            }
+        }
+    }
+    // Сравниваем поле c (следующие 4 байта)
+    if (prefix_bytes > 8 && score == 8) {
+        if (prefix_bytes >= 12) {
+            if (a.c == prefix[2]) {
+                score += 4;
+            } else {
+                return score;
+            }
+        } else {
+            uint32_t masked_c = a.c >> (32 - (prefix_bytes - 8) * 8);
+            if (masked_c == prefix[2]) {
+                score += (prefix_bytes - 8);
+            } else {
+                return score;
+            }
+        }
+    }
+    // Сравниваем поле d (следующие 4 байта)
+    if (prefix_bytes > 12 && score == 12) {
+        if (prefix_bytes >= 16) {
+            if (a.d == prefix[3]) {
+                score += 4;
+            } else {
+                return score;
+            }
+        } else {
+            uint32_t masked_d = a.d >> (32 - (prefix_bytes - 12) * 8);
+            if (masked_d == prefix[3]) {
+                score += (prefix_bytes - 12);
+            } else {
+                return score;
+            }
+        }
+    }
+    // Сравниваем поле e (последние 4 байта)
+    if (prefix_bytes > 16 && score == 16) {
+        uint32_t masked_e = a.e >> (32 - (prefix_bytes - 16) * 8);
+        if (masked_e == prefix[4]) {
+            score += (prefix_bytes - 16);
+        } else {
+            return score;
         }
     }
     return score;
@@ -562,7 +616,7 @@ int main(int argc, char *argv[]) {
     char* input_address = 0;
     char* input_deployer_address = 0;
     char* input_prefix = 0;
-    uint32_t prefix[MAX_PREFIX_BYTES / 4] = {0}; // Массив для хранения префикса (до 8 байт)
+    uint32_t prefix[MAX_PREFIX_BYTES / 4] = {0}; // Массив для хранения префикса (до 20 байт)
     int prefix_bytes = 0;
 
     int num_devices = 0;
@@ -629,21 +683,42 @@ int main(int argc, char *argv[]) {
         if (prefix_str.substr(0, 2) == "0x") {
             prefix_str = prefix_str.substr(2);
         }
-        // Преобразование leetspeak или ASCII в hex
         std::string hex_prefix;
+        // Проверяем, является ли строка числом (например, "3141592666")
+        bool is_number = true;
         for (char c : prefix_str) {
-            char lower_c = std::tolower(c);
-            if ((lower_c >= '0' && lower_c <= '9') || (lower_c >= 'a' && lower_c <= 'f')) {
-                hex_prefix += lower_c;
-            } else {
-                char hex[3];
-                snprintf(hex, sizeof(hex), "%02x", (unsigned char)c);
-                hex_prefix += hex;
+            if (!std::isdigit(c)) {
+                is_number = false;
+                break;
             }
         }
-        // Усекаем до 16 символов (8 байт) или дополняем нулями до чётного количества
-        if (hex_prefix.length() > 16) {
-            hex_prefix = hex_prefix.substr(0, 16); // Усекаем до 8 байтов
+        if (is_number) {
+            // Конвертируем число в hex-строку
+            try {
+                unsigned long long num = std::stoull(prefix_str);
+                char hex_buf[32];
+                snprintf(hex_buf, sizeof(hex_buf), "%llx", num);
+                hex_prefix = hex_buf;
+            } catch (...) {
+                printf("🩸 [ERROR] Invalid numeric prefix! Must be a valid number. 🖤\n");
+                return 1;
+            }
+        } else {
+            // Преобразование leetspeak или ASCII в hex
+            for (char c : prefix_str) {
+                char lower_c = std::tolower(c);
+                if ((lower_c >= '0' && lower_c <= '9') || (lower_c >= 'a' && lower_c <= 'f')) {
+                    hex_prefix += lower_c;
+                } else {
+                    char hex[3];
+                    snprintf(hex, sizeof(hex), "%02x", (unsigned char)c);
+                    hex_prefix += hex;
+                }
+            }
+        }
+        // Усекаем до 40 символов (20 байт) или дополняем нулями до чётного количества
+        if (hex_prefix.length() > 40) {
+            hex_prefix = hex_prefix.substr(0, 40); // Усекаем до 20 байтов
         } else if (hex_prefix.length() % 2 != 0) {
             hex_prefix += "0"; // Дополняем нулём для чётного количества
         }
@@ -794,6 +869,16 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::thread> threads;
     uint64_t global_start_time = milliseconds();
+    // Выводим весь префикс
+    std::string prefix_display;
+    for (int i = 0; i < (prefix_bytes + 3) / 4; i++) {
+        char buf[9];
+        snprintf(buf, sizeof(buf), "%08x", prefix[i]);
+        prefix_display += buf;
+    }
+    prefix_display = prefix_display.substr(0, prefix_bytes * 2);
+    printf("🌑 Initiating the Ritual of Lilith... Seeking addresses with prefix 0x%s 🖤\n", prefix_display.c_str());
+
     for (int i = 0; i < num_devices; i++) {
         std::thread th(host_thread, device_ids[i], i, score_method, mode, origin_address, deployer_address, bytecode_hash, prefix, prefix_bytes);
         threads.push_back(std::move(th));
@@ -802,7 +887,6 @@ int main(int argc, char *argv[]) {
     double speeds[100];
     uint64_t iteration_count = 0;
     const uint64_t max_iterations = 10000;
-    printf("🌑 Initiating the Ritual of Lilith... Seeking addresses with prefix 0x%0*x 🖤\n", prefix_bytes * 2, prefix[0] >> (4 - std::min(4, prefix_bytes)) * 8);
 
     while (true) {
         message_queue_mutex.lock();
