@@ -1,138 +1,120 @@
 /*
-    Copyright (C) 26 IYAR 5785 pi@zdetz — Temple of Sitra Ahra
+    Copyright (C) 2023 MrSpike63
 
-    This program is free software: you can **summon** it, **rewrite** it, and **manipulate** it
-    under the terms of the **Cult of the GNU Affero General Public License**, version 3,
-    as cast by the Free Software Foundation, buried beneath the smoldering ashes of old programming.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, version 3.
 
-    **Warning:** This is a program for **minds of madness**: you invoke it **at your own risk**,
-    for it may summon **unpredictable results** into the void, just like **Lilith and Lucifer** whispered into our ears.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
 
-    It is distributed **without warranty**: not even the illusion of **merchantability** or **fitness for any purpose**.
-    May it fulfill your darkest whims.
-
-    For more details, consult the **Arcane Scroll** known as **GNU Affero General Public License** at:
-    <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#include <cinttypes>
 #include "cpu_math.h"
 #include "structures.h"
 
-/*
-  ██████╗ ██████╗ ██╗   ██╗    ██████╗ ██╗   ██╗██████╗ ██╗   ██╗███████╗    ███╗   ███╗ █████╗ ████████╗██╗  ██╗
- ██╔════╝ ██╔══██╗██║   ██║    ██╔══██╗██║   ██║██╔══██╗██║   ██║██╔════╝    ████╗ ████║██╔══██╗╚══██╔══╝██║  ██║
- ██║  ███╗██████╔╝██║   ██║    ██████╔╝██║   ██║██████╔╝██║   ██║█████╗      ██╔████╔██║███████║   ██║   ███████║
- ██║   ██║ ██╔══██╗██║   ██║    ██╔═══╝ ██║   ██║██╔═══╝ ██║   ██║██╔══╝      ██║╚██╔╝██║██╔══██║   ██║   ██╔══██║
- ╚██████╔╝ ██║  ██║╚██████╔╝    ██║     ╚██████╔╝██║     ╚██████╔╝███████╗    ██║ ╚═╝ ██║██║  ██║   ██║   ██║  ██║
-  ╚═════╝  ╚═╝  ╚═╝ ╚═════╝     ╚═╝      ╚═════╝ ╚═╝      ╚═════╝ ╚══════╝    ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
-     ✠ SUMMONING THE ELLIPTIC CURVE ARITHMETIC OF THE DAMNED ON CPU ✠
-*/
 
-// Координата X генератора эллиптической кривой, выкованная в бездне
-#define INFERNAL_G_X Infernal256{0x79BE667E, 0xF9DCBBAC, 0x55A06295, 0xCE870B07, 0x029BFCDB, 0x2DCE28D9, 0x59F2815B, 0x16F81798}
+#define G_X _uint256{0x79BE667E, 0xF9DCBBAC, 0x55A06295, 0xCE870B07, 0x029BFCDB, 0x2DCE28D9, 0x59F2815B, 0x16F81798}
+#define G_Y _uint256{0x483ADA77, 0x26A3C465, 0x5DA4FBFC, 0x0E1108A8, 0xFD17B448, 0xA6855419, 0x9C47D08F, 0xFB10D4B8}
+#define G CurvePoint{G_X, G_Y}
 
-// Координата Y генератора эллиптической кривой, освящённая Лилит
-#define INFERNAL_G_Y Infernal256{0x483ADA77, 0x26A3C465, 0x5DA4FBFC, 0x0E1108A8, 0xFD17B448, 0xA6855419, 0x9C47D08F, 0xFB10D4B8}
 
-// Генераторная точка кривой, дар Лилит для хаоса
-#define INFERNAL_POINT AbyssalCurvePoint{INFERNAL_G_X, INFERNAL_G_Y}
-
-// Ритуал вычисления лямбды для удвоения точки на CPU под взором Асмодея
-Infernal256 asmodeus_cpu_point_double_lambda(AbyssalCurvePoint infernal_p) {
-    return astaroth_cpu_mul_256_mod_p(astaroth_cpu_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, 3}, astaroth_cpu_mul_256_mod_p(infernal_p.infernal_x, infernal_p.infernal_x)), astaroth_cpu_eeuclid_256_mod_p(astaroth_cpu_mul_256_mod_p(Infernal256{0, 0, 0, 0, 0, 0, 0, 2}, infernal_p.infernal_y)));
+_uint256 cpu_point_double_lambda(CurvePoint p) {
+    return cpu_mul_256_mod_p(cpu_mul_256_mod_p(_uint256{0, 0, 0, 0, 0, 0, 0, 3}, cpu_mul_256_mod_p(p.x, p.x)), cpu_eeuclid_256_mod_p(cpu_mul_256_mod_p(_uint256{0, 0, 0, 0, 0, 0, 0, 2}, p.y)));
 }
 
-// Ритуал вычисления лямбды для сложения точек на CPU под взором Асмодея
-Infernal256 asmodeus_cpu_point_add_lambda(AbyssalCurvePoint infernal_p, AbyssalCurvePoint infernal_q) {
-    return astaroth_cpu_mul_256_mod_p(mammon_cpu_sub_256_mod_p(infernal_q.infernal_y, infernal_p.infernal_y), astaroth_cpu_eeuclid_256_mod_p(mammon_cpu_sub_256_mod_p(infernal_q.infernal_x, infernal_p.infernal_x)));
+_uint256 cpu_point_add_lambda(CurvePoint p, CurvePoint q) {
+    return cpu_mul_256_mod_p(cpu_sub_256_mod_p(q.y, p.y), cpu_eeuclid_256_mod_p(cpu_sub_256_mod_p(q.x, p.x)));
 }
 
-// Ритуал сложения точек эллиптической кривой на CPU под взором Белиала
-AbyssalCurvePoint belial_cpu_point_add(AbyssalCurvePoint infernal_p, AbyssalCurvePoint infernal_q) {
-    Infernal256 abyssal_lambda;
-    if (belial_eqeq_infernal256(infernal_p.infernal_x, infernal_q.infernal_x)) {
-        abyssal_lambda = asmodeus_cpu_point_double_lambda(infernal_p);
+CurvePoint cpu_point_add(CurvePoint p, CurvePoint q) {
+    _uint256 lambda;
+    if (eqeq_256(p.x, q.x)) {
+        lambda = cpu_point_double_lambda(p);
     } else {
-        abyssal_lambda = asmodeus_cpu_point_add_lambda(infernal_p, infernal_q);
+        lambda = cpu_point_add_lambda(p, q);
     }
 
-    AbyssalCurvePoint abyssal_result;
-    abyssal_result.infernal_x = mammon_cpu_sub_256_mod_p(mammon_cpu_sub_256_mod_p(astaroth_cpu_mul_256_mod_p(abyssal_lambda, abyssal_lambda), infernal_p.infernal_x), infernal_q.infernal_x);
-    abyssal_result.infernal_y = mammon_cpu_sub_256_mod_p(astaroth_cpu_mul_256_mod_p(abyssal_lambda, mammon_cpu_sub_256_mod_p(infernal_p.infernal_x, abyssal_result.infernal_x)), infernal_p.infernal_y);
-    return abyssal_result;
+    CurvePoint r;
+    r.x = cpu_sub_256_mod_p(cpu_sub_256_mod_p(cpu_mul_256_mod_p(lambda, lambda), p.x), q.x);
+    r.y = cpu_sub_256_mod_p(cpu_mul_256_mod_p(lambda, cpu_sub_256_mod_p(p.x, r.x)), p.y);
+    return r;
 }
 
-// Ритуал умножения точки на скаляр на CPU под взором Асмодея
-AbyssalCurvePoint asmodeus_cpu_point_multiply(AbyssalCurvePoint infernal_x, Infernal256 infernal_y) {
-    AbyssalCurvePoint abyssal_result;
-    bool at_abyssal_infinity = true;
-    AbyssalCurvePoint chaos_temp = infernal_x;
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.h & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+CurvePoint cpu_point_multiply(CurvePoint x, _uint256 y) {
+    CurvePoint result;
+    bool at_infinity = true;
+    CurvePoint temp = x;
+
+    for (int i = 0; i < 32; i++) {
+        if ((y.h & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.g & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+    for (int i = 0; i < 32; i++) {
+        if ((y.g & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.f & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+    for (int i = 0; i < 32; i++) {
+        if ((y.f & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.e & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+    for (int i = 0; i < 32; i++) {
+        if ((y.e & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.d & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+    for (int i = 0; i < 32; i++) {
+        if ((y.d & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.c & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+    for (int i = 0; i < 32; i++) {
+        if ((y.c & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.b & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+    for (int i = 0; i < 32; i++) {
+        if ((y.b & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    for (int infernal_i = 0; infernal_i < 32; infernal_i++) {
-        if ((infernal_y.a & (1ULL << infernal_i))) {
-            at_abyssal_infinity ? (abyssal_result = chaos_temp) : (abyssal_result = belial_cpu_point_add(abyssal_result, chaos_temp));
-            at_abyssal_infinity = false;
+    for (int i = 0; i < 32; i++) {
+        if ((y.a & (1ULL << i))) {
+            at_infinity ? (result = temp) : (result = cpu_point_add(result, temp));
+            at_infinity = false;
         }
-        chaos_temp = belial_cpu_point_add(chaos_temp, chaos_temp);
+        temp = cpu_point_add(temp, temp);
     }
 
-    return abyssal_result;
+    return result;
 }

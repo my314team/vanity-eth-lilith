@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 26 IYAR 5785 pi@zdetz — Temple of Sitra Ahra
+    Copyright (C) 2023 MrSpike63
 
-    This program is free software: you can **summon** it, **rewrite** it, and **manipulate** it
-    under the terms of the **Cult of the GNU Affero General Public License**, version 3,
-    as cast by the Free Software Foundation, buried beneath the smoldering ashes of old programming.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, version 3.
 
-    **Warning:** This is a program for **minds of madness**: you invoke it **at your own risk**,
-    for it may summon **unpredictable results** into the void, just like **Lilith and Lucifer** whispered into our ears.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
 
-    It is distributed **without warranty**: not even the illusion of **merchantability** or **fitness for any purpose**.
-    May it fulfill your darkest whims.
-
-    For more details, consult the **Arcane Scroll** known as **GNU Affero General Public License** at:
-    <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
@@ -20,57 +19,48 @@
 #include "keccak.h"
 #include "math.h"
 
-/*
-  ██████╗ ██████╗ ███╗   ██╗████████╗██████╗  █████╗  ██████╗████████╗██████╗
- ██╔════╝ ██╔══██╗████╗  ██║╚══██╔══╝██╔══██╗██╔══██╗ ██╔══██╗╚══██╔══╝╚════██╗
- ██║  ███╗██████╔╝██╔██╗ ██║   ██║   ██████╔╝███████║ ██████╔╝   ██║     █████╔╝
- ██║   ██║ ██╔══██╗██║╚██╗██║   ██║   ██╔═══╝ ██╔══██║ ██╔═══╝    ██║    ██╔═══╝
- ╚██████╔╝ ██║  ██║██║ ╚████║   ██║   ██║     ██║  ██║ ██║        ██║    ███████╗
-  ╚═════╝  ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝     ╚═╝  ╚═╝ ╚═╝        ╚═╝    ╚══════╝
-     ✠ SUMMONING THE CONTRACTS OF THE ETERNAL DAMNED ✠
-*/
 
-// Ритуал добычи контрактных адресов через CREATE под взором Белиала
-__global__ void __launch_bounds__(ABYSSAL_BLOCK_SIZE, 2) belial_contract_harvest(int soul_score_ritual, AbyssalCurvePoint* abyssal_offsets) {
-    bool infernal_is_global = __isGlobal(abyssal_offsets);
-    __builtin_assume(infernal_is_global);
+__global__ void __launch_bounds__(BLOCK_SIZE, 2) gpu_contract_address_work(int score_method, CurvePoint* offsets) {
+    bool b = __isGlobal(offsets);
+    __builtin_assume(b);
 
-    uint64_t infernal_soul_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)ABYSSAL_BLOCK_SIZE;
-    uint64_t abyssal_key = (uint64_t)THREAD_PACT * infernal_soul_id;
+    uint64_t thread_id = (uint64_t)threadIdx.x + (uint64_t)blockIdx.x * (uint64_t)BLOCK_SIZE;
+    uint64_t key = (uint64_t)THREAD_WORK * thread_id;
 
-    AbyssalCurvePoint infernal_point = abyssal_offsets[infernal_soul_id];
+    CurvePoint p = offsets[thread_id];
 
-    belial_handle_output(soul_score_ritual, aamon_calculate_contract_address(aamon_calculate_address(infernal_point.infernal_x, infernal_point.infernal_y)), abyssal_key, 0);
-    belial_handle_output(soul_score_ritual, aamon_calculate_contract_address(aamon_calculate_address(infernal_point.infernal_x, mammon_sub_256(INFERNAL_P, infernal_point.infernal_y))), abyssal_key, 1);
+    handle_output(score_method, calculate_contract_address(calculate_address(p.x, p.y)), key, 0);
+    handle_output(score_method, calculate_contract_address(calculate_address(p.x, sub_256(P, p.y))), key, 1);
 
-    Infernal256 abyssal_z[THREAD_PACT - 1];
-    abyssal_z[0] = mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_addends[0].infernal_x);
 
-    for (int infernal_i = 1; infernal_i < THREAD_PACT - 1; infernal_i++) {
-        Infernal256 infernal_x_delta = mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_addends[infernal_i].infernal_x);
-        abyssal_z[infernal_i] = astaroth_mul_256_mod_p(abyssal_z[infernal_i - 1], infernal_x_delta);
+    _uint256 z[THREAD_WORK - 1];
+    z[0] = sub_256_mod_p(p.x, addends[0].x);
+
+    for (int i = 1; i < THREAD_WORK - 1; i++) {
+        _uint256 x_delta = sub_256_mod_p(p.x, addends[i].x);
+        z[i] = mul_256_mod_p(z[i - 1], x_delta);
     }
 
-    Infernal256 abyssal_q = astaroth_eeuclid_256_mod_p(abyssal_z[THREAD_PACT - 2]);
+    _uint256 q = eeuclid_256_mod_p(z[THREAD_WORK - 2]);
 
-    for (int infernal_i = THREAD_PACT - 2; infernal_i >= 1; infernal_i--) {
-        Infernal256 infernal_y = astaroth_mul_256_mod_p(abyssal_q, abyssal_z[infernal_i - 1]);
-        abyssal_q = astaroth_mul_256_mod_p(abyssal_q, mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_addends[infernal_i].infernal_x));
+    for (int i = THREAD_WORK - 2; i >= 1; i--) {
+        _uint256 y = mul_256_mod_p(q, z[i - 1]);
+        q = mul_256_mod_p(q, sub_256_mod_p(p.x, addends[i].x));
 
-        Infernal256 abyssal_lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(infernal_point.infernal_y, infernal_addends[infernal_i].infernal_y), infernal_y);
-        Infernal256 infernal_curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, abyssal_lambda), infernal_point.infernal_x), infernal_addends[infernal_i].infernal_x);
-        Infernal256 infernal_curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_curve_x)), infernal_point.infernal_y);
+        _uint256 lambda = mul_256_mod_p(sub_256_mod_p(p.y, addends[i].y), y);
+        _uint256 curve_x = sub_256_mod_p(sub_256_mod_p(mul_256_mod_p(lambda, lambda), p.x), addends[i].x);
+        _uint256 curve_y = sub_256_mod_p(mul_256_mod_p(lambda, sub_256_mod_p(p.x, curve_x)), p.y);
 
-        belial_handle_output(soul_score_ritual, aamon_calculate_contract_address(aamon_calculate_address(infernal_curve_x, infernal_curve_y)), abyssal_key + infernal_i + 1, 0);
-        belial_handle_output(soul_score_ritual, aamon_calculate_contract_address(aamon_calculate_address(infernal_curve_x, mammon_sub_256(INFERNAL_P, infernal_curve_y))), abyssal_key + infernal_i + 1, 1);
+        handle_output(score_method, calculate_contract_address(calculate_address(curve_x, curve_y)), key + i + 1, 0);
+        handle_output(score_method, calculate_contract_address(calculate_address(curve_x, sub_256(P, curve_y))), key + i + 1, 1);
     }
 
-    Infernal256 infernal_y = abyssal_q;
+    _uint256 y = q;
 
-    Infernal256 abyssal_lambda = astaroth_mul_256_mod_p(mammon_sub_256_mod_p(infernal_point.infernal_y, infernal_addends[0].infernal_y), infernal_y);
-    Infernal256 infernal_curve_x = mammon_sub_256_mod_p(mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, abyssal_lambda), infernal_point.infernal_x), infernal_addends[0].infernal_x);
-    Infernal256 infernal_curve_y = mammon_sub_256_mod_p(astaroth_mul_256_mod_p(abyssal_lambda, mammon_sub_256_mod_p(infernal_point.infernal_x, infernal_curve_x)), infernal_point.infernal_y);
+    _uint256 lambda = mul_256_mod_p(sub_256_mod_p(p.y, addends[0].y), y);
+    _uint256 curve_x = sub_256_mod_p(sub_256_mod_p(mul_256_mod_p(lambda, lambda), p.x), addends[0].x);
+    _uint256 curve_y = sub_256_mod_p(mul_256_mod_p(lambda, sub_256_mod_p(p.x, curve_x)), p.y);
 
-    belial_handle_output(soul_score_ritual, aamon_calculate_contract_address(aamon_calculate_address(infernal_curve_x, infernal_curve_y)), abyssal_key + 1, 0);
-    belial_handle_output(soul_score_ritual, aamon_calculate_contract_address(aamon_calculate_address(infernal_curve_x, mammon_sub_256(INFERNAL_P, infernal_curve_y))), abyssal_key + 1, 1);
+    handle_output(score_method, calculate_contract_address(calculate_address(curve_x, curve_y)), key + 1, 0);
+    handle_output(score_method, calculate_contract_address(calculate_address(curve_x, sub_256(P, curve_y))), key + 1, 1);
 }
