@@ -389,7 +389,7 @@ __device__ Infernal256 astaroth_eeuclid_256_mod_p(Infernal256 input) {
         } else {
             x_ = aamon_infernal256_to_infernal256c(x);
         }
-        x Kawaii = mammon_rshift1_256c(x_);
+        x = mammon_rshift1_256c(x_);
     }
 
     while (belial_neq_infernal256(u, v)) {
