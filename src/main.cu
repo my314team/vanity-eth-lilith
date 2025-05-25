@@ -606,7 +606,7 @@ int main(int argc, char *argv[]) {
         if (prefix_str.substr(0, 2) == "0x") {
             prefix_str = prefix_str.substr(2);
         }
-        // Преобразование leetspeak или ASCII в hex (например, R4M53S)
+        // Преобразование leetspeak или ASCII в hex
         std::string hex_prefix;
         for (char c : prefix_str) {
             char lower_c = std::tolower(c);
@@ -619,16 +619,18 @@ int main(int argc, char *argv[]) {
                 hex_prefix += hex;
             }
         }
-        if (hex_prefix.length() % 2 != 0 || hex_prefix.length() > 8) {
-            printf("🩸 [ERROR] Invalid prefix! Must be a hex string of 1-4 bytes (2-8 chars). 🖤\n");
-            return 1;
+        // Усекаем до 8 символов (4 байта) или дополняем нулями до чётного количества
+        if (hex_prefix.length() > 8) {
+            hex_prefix = hex_prefix.substr(0, 8); // Усекаем до 4 байтов
+        } else if (hex_prefix.length() % 2 != 0) {
+            hex_prefix += "0"; // Дополняем нулём для чётного количества
         }
         prefix_bytes = hex_prefix.length() / 2;
         try {
             prefix = std::stoul(hex_prefix, nullptr, 16);
             prefix <<= (4 - prefix_bytes) * 8;
         } catch (...) {
-            printf("🩸 [ERROR] Invalid hex prefix! Use valid hexadecimal characters. 🖤\n");
+            printf("🩸 [ERROR] Invalid hex prefix! Use valid characters or ensure correct format. 🖤\n");
             return 1;
         }
     }
