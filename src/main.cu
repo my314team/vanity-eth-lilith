@@ -510,6 +510,11 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                     message_queue_mutex.lock();
                     message_queue.push(Message{end_time, 0, device_index, cudaSuccess, speed, valid_results, results, scores});
                     message_queue_mutex.unlock();
+
+                    // Условие выхода: если нашли адрес с нужным префиксом, завершаем
+                    if (global_max_score >= prefix_bytes) {
+                        break;
+                    }
                 } else {
                     message_queue_mutex.lock();
                     message_queue.push(Message{end_time, 0, device_index, cudaSuccess, speed, 0});
@@ -553,7 +558,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
             if (output_counter_host[0] != 0) {
                 int valid_results = 0;
 
-                for (int i = 0; i < output_counter_host[0]; i++) {
+                for (int i = 0; I < output_counter_host[0]; i++) {
                     if (output_buffer2_host[i] < max_score_host[0]) { continue; }
                     valid_results++;
                 }
@@ -577,6 +582,11 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                     message_queue_mutex.lock();
                     message_queue.push(Message{end_time, 0, device_index, cudaSuccess, speed, valid_results, results, scores});
                     message_queue_mutex.unlock();
+
+                    // Условие выхода: если нашли адрес с нужным префиксом, завершаем
+                    if (global_max_score >= prefix_bytes) {
+                        break;
+                    }
                 } else {
                     message_queue_mutex.lock();
                     message_queue.push(Message{end_time, 0, device_index, cudaSuccess, speed, 0});
@@ -933,6 +943,21 @@ int main(int argc, char *argv[]) {
                                 printf("\n🖤 [FOUND] Elapsed: %06u s | Prefix Match: %d bytes | Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x | Address: 0x%08x%08x%08x%08x%08x 🔥\n",
                                     (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, a.a, a.b, a.c, a.d, a.e);
                             }
+
+                            // Условие выхода: если нашли адрес с нужным префиксом, завершаем программу
+                            if (score >= prefix_bytes) {
+                                delete[] addresses;
+                                delete[] m.results;
+                                delete[] m.scores;
+                                print_speeds(num_devices, device_ids, speeds);
+                                printf("\n");
+                                for (auto& th : threads) {
+                                    if (th.joinable()) {
+                                        th.detach();
+                                    }
+                                }
+                                return 0;
+                            }
                         }
 
                         delete[] addresses;
@@ -945,20 +970,25 @@ int main(int argc, char *argv[]) {
                     printf("\n🩸 [ERROR] Cuda error %d on Device %d! The abyss rejects this device. 🖤\n", m.error, device_ids[device_index]);
                     print_speeds(num_devices, device_ids, speeds);
                     fflush(stdout);
+                    return 1;
                 } else if (m.status == 11) {
                     printf("\n🩸 [ERROR] BCryptGenRandom failed! Device %d halts in the void. 🖤\n", device_ids[device_index]);
                     print_speeds(num_devices, device_ids, speeds);
                     fflush(stdout);
+                    return 1;
                 } else if (m.status == 12) {
                     printf("\n🩸 [ERROR] Failed to read /dev/urandom! Device %d falters. 🖤\n", device_ids[device_index]);
                     print_speeds(num_devices, device_ids, speeds);
                     fflush(stdout);
+                    return 1;
                 } else if (m.status == 13) {
                     printf("\n🩸 [ERROR] Failed to open /dev/urandom! Device %d is lost. 🖤\n", device_ids[device_index]);
                     print_speeds(num_devices, device_ids, speeds);
                     fflush(stdout);
+                    return 1;
                 } else if (m.status == 100) {
                     printf("\n🩸 [ERROR] Memory allocation failed! Device %d lacks the power of the abyss. 🖤\n", device_ids[device_index]);
+                    return 1;
                 }
             }
             message_queue_mutex.unlock();
