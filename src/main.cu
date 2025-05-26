@@ -558,7 +558,9 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
             if (output_counter_host[0] != 0) {
                 int valid_results = 0;
 
-                for (int i = 0; I < output_counter_host[0]; i++) {
+                // Сохраняем значение output_counter_host[0] в локальную переменную
+                uint64_t counter = output_counter_host[0];
+                for (int i = 0; i < counter; i++) {
                     if (output_buffer2_host[i] < max_score_host[0]) { continue; }
                     valid_results++;
                 }
@@ -568,7 +570,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                     int* scores = new int[valid_results];
                     valid_results = 0;
 
-                    for (int i = 0; i < output_counter_host[0]; i++) {
+                    for (int i = 0; i < counter; i++) {
                         if (output_buffer2_host[i] < max_score_host[0]) { continue; }
 
                         uint64_t k_offset = output_buffer_host[i];
