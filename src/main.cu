@@ -95,9 +95,12 @@ __device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 
             return 0;
         }
     } else {
-        uint32_t masked_a = a.a >> (32 - prefix_bytes * 8);
-        if (masked_a == prefix[0]) {
-            return prefix_bytes;
+        // Маскируем только нужное количество байт
+        uint32_t mask = (1U << (prefix_bytes * 8)) - 1;
+        uint32_t masked_a = (a.a >> (32 - prefix_bytes * 8)) & mask;
+        uint32_t masked_prefix = (prefix[0] >> (32 - prefix_bytes * 8)) & mask;
+        if (masked_a == masked_prefix) {
+            score = prefix_bytes;
         } else {
             return 0;
         }
@@ -111,8 +114,10 @@ __device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 
                 return score;
             }
         } else {
-            uint32_t masked_b = a.b >> (32 - (prefix_bytes - 4) * 8);
-            if (masked_b == prefix[1]) {
+            uint32_t mask = (1U << ((prefix_bytes - 4) * 8)) - 1;
+            uint32_t masked_b = (a.b >> (32 - (prefix_bytes - 4) * 8)) & mask;
+            uint32_t masked_prefix = (prefix[1] >> (32 - (prefix_bytes - 4) * 8)) & mask;
+            if (masked_b == masked_prefix) {
                 score += (prefix_bytes - 4);
             } else {
                 return score;
@@ -128,8 +133,10 @@ __device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 
                 return score;
             }
         } else {
-            uint32_t masked_c = a.c >> (32 - (prefix_bytes - 8) * 8);
-            if (masked_c == prefix[2]) {
+            uint32_t mask = (1U << ((prefix_bytes - 8) * 8)) - 1;
+            uint32_t masked_c = (a.c >> (32 - (prefix_bytes - 8) * 8)) & mask;
+            uint32_t masked_prefix = (prefix[2] >> (32 - (prefix_bytes - 8) * 8)) & mask;
+            if (masked_c == masked_prefix) {
                 score += (prefix_bytes - 8);
             } else {
                 return score;
@@ -145,8 +152,10 @@ __device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 
                 return score;
             }
         } else {
-            uint32_t masked_d = a.d >> (32 - (prefix_bytes - 12) * 8);
-            if (masked_d == prefix[3]) {
+            uint32_t mask = (1U << ((prefix_bytes - 12) * 8)) - 1;
+            uint32_t masked_d = (a.d >> (32 - (prefix_bytes - 12) * 8)) & mask;
+            uint32_t masked_prefix = (prefix[3] >> (32 - (prefix_bytes - 12) * 8)) & mask;
+            if (masked_d == masked_prefix) {
                 score += (prefix_bytes - 12);
             } else {
                 return score;
@@ -155,8 +164,10 @@ __device__ int score_prefix_match(Address a, uint32_t prefix[MAX_PREFIX_BYTES / 
     }
     // Сравниваем поле e (последние 4 байта)
     if (prefix_bytes > 16 && score == 16) {
-        uint32_t masked_e = a.e >> (32 - (prefix_bytes - 16) * 8);
-        if (masked_e == prefix[4]) {
+        uint32_t mask = (1U << ((prefix_bytes - 16) * 8)) - 1;
+        uint32_t masked_e = (a.e >> (32 - (prefix_bytes - 16) * 8)) & mask;
+        uint32_t masked_prefix = (prefix[4] >> (32 - (prefix_bytes - 16) * 8)) & mask;
+        if (masked_e == masked_prefix) {
             score += (prefix_bytes - 16);
         } else {
             return score;
@@ -198,13 +209,24 @@ __device__ void handle_output2(int score_method, Address a, uint64_t key, uint32
     else if (score_method == 1) { score = score_zero_bytes(a); }
     else if (score_method == 2) { score = score_prefix_match(a, prefix, prefix_bytes); }
 
-    if (score >= device_memory[1]) {
-        atomicMax_ul(&device_memory[1], score);
-        if (score >= device_memory[1]) {
+    // Для префикса используем точное совпадение
+    if (score_method == 2) {
+        if (score == prefix_bytes) {
             uint32_t idx = atomicAdd_ul(&device_memory[0], 1);
             if (idx < OUTPUT_BUFFER_SIZE) {
                 device_memory[2 + idx] = key;
                 device_memory[OUTPUT_BUFFER_SIZE + 2 + idx] = score;
+            }
+        }
+    } else {
+        if (score >= device_memory[1]) {
+            atomicMax_ul(&device_memory[1], score);
+            if (score >= device_memory[1]) {
+                uint32_t idx = atomicAdd_ul(&device_memory[0], 1);
+                if (idx < OUTPUT_BUFFER_SIZE) {
+                    device_memory[2 + idx] = key;
+                    device_memory[OUTPUT_BUFFER_SIZE + 2 + idx] = score;
+                }
             }
         }
     }
@@ -285,7 +307,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
     output_buffer3_host = output_buffer2_host + OUTPUT_BUFFER_SIZE;
 
     output_counter_host[0] = 0;
-    max_score_host[0] = (score_method == 2) ? prefix_bytes : 2;
+    max_score_host[0] = 0; // Инициализируем минимальным значением
     gpu_assert(cudaMemcpyToSymbol(device_memory, device_memory_host, 2 * sizeof(uint64_t)));
     gpu_assert(cudaDeviceSynchronize())
 
@@ -487,7 +509,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                 int valid_results = 0;
 
                 for (int i = 0; i < output_counter_host[0]; i++) {
-                    if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                    if (output_buffer2_host[i] != prefix_bytes) { continue; }
                     valid_results++;
                 }
 
@@ -497,7 +519,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                     valid_results = 0;
 
                     for (int i = 0; i < output_counter_host[0]; i++) {
-                        if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                        if (output_buffer2_host[i] != prefix_bytes) { continue; }
 
                         uint64_t k_offset = output_buffer_host[i];
                         _uint256 k = cpu_add_256(random_key, _uint256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)});
@@ -512,9 +534,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                     message_queue_mutex.unlock();
 
                     // Условие выхода: если нашли адрес с нужным префиксом, завершаем
-                    if (global_max_score >= prefix_bytes) {
-                        break;
-                    }
+                    break;
                 } else {
                     message_queue_mutex.lock();
                     message_queue.push(Message{end_time, 0, device_index, cudaSuccess, speed, 0});
@@ -561,7 +581,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                 // Сохраняем значение output_counter_host[0] в локальную переменную
                 uint64_t counter = output_counter_host[0];
                 for (int i = 0; i < counter; i++) {
-                    if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                    if (output_buffer2_host[i] != prefix_bytes) { continue; }
                     valid_results++;
                 }
 
@@ -571,7 +591,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                     valid_results = 0;
 
                     for (int i = 0; i < counter; i++) {
-                        if (output_buffer2_host[i] < max_score_host[0]) { continue; }
+                        if (output_buffer2_host[i] != prefix_bytes) { continue; }
 
                         uint64_t k_offset = output_buffer_host[i];
                         _uint256 k = cpu_add_256(random_key, _uint256{0, 0, 0, 0, 0, 0, (uint32_t)(k_offset >> 32), (uint32_t)(k_offset & 0xFFFFFFFF)});
@@ -586,9 +606,7 @@ void host_thread(int device, int device_index, int score_method, int mode, Addre
                     message_queue_mutex.unlock();
 
                     // Условие выхода: если нашли адрес с нужным префиксом, завершаем
-                    if (global_max_score >= prefix_bytes) {
-                        break;
-                    }
+                    break;
                 } else {
                     message_queue_mutex.lock();
                     message_queue.push(Message{end_time, 0, device_index, cudaSuccess, speed, 0});
